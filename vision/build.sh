@@ -1,1 +1,1 @@
-g++ AHR.cpp -o ahr_vison -lopencv_core -lopencv_highgui -lopencv_imgproc
+g++ ahr_vision.cpp -o ahr_vision -lopencv_core -lopencv_highgui -lopencv_imgproc
