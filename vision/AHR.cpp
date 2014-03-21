@@ -31,10 +31,9 @@
 
 // PS3 Camera windows driver from : http://codelaboratories.com/products/eye/driver/
 
-#include <opencv\cv.h>
-#include <opencv\highgui.h>
+#include <opencv/cv.h>
+#include <opencv/highgui.h>
 #include <time.h>
-#include <Windows.h>
 #include <stdio.h>
 #include <math.h>
 
@@ -48,10 +47,23 @@
 #define CAM_PIX_HEIGHT 480
 #define CAM_PIX_TO_MM 1.4
 
+// Define Windows.h types
+typedef unsigned long DWORD;
+typedef char BYTE;
+
+// Define equivalent of Windows's GetTickCount
+double GetTickCount(void) 
+{
+  struct timespec now;
+  if (clock_gettime(CLOCK_MONOTONIC, &now))
+    return 0;
+  return now.tv_sec * 1000.0 + now.tv_nsec / 1000000.0;
+}
+
 time_t start,end;
 
 // Parameters (with default values)
-char comPort[20] = "COM19";
+//char comPort[20] = "COM19";
 int minH=70;
 int maxH=94;
 int minS=60;
@@ -89,7 +101,7 @@ DWORD frameTimestamp=0;
 DWORD firstTimestamp=0;
 DWORD oldFrameTimestamp;
 
-HANDLE serialPort;  // Serial port
+//HANDLE serialPort;  // Serial port
 BYTE message[20];   // BYTES buffer
 
 FILE* logFile;
@@ -391,62 +403,6 @@ void trackObjectRobot(IplImage* imgThresh){
  cvReleaseMemStorage(&storage);
 }
 
-
-bool openComPort(wchar_t* portSpecifier)
-{
-	DCB dcb;
-
-	serialPort = CreateFile(portSpecifier,GENERIC_READ|GENERIC_WRITE,0,NULL,OPEN_EXISTING,0,NULL);
-
-	if (!GetCommState(serialPort,&dcb))
-		return(false);
-
-	// Serial port configuration
-	dcb.BaudRate = CBR_115200;
-	dcb.ByteSize = 8;
-	dcb.Parity = NOPARITY;
-	dcb.StopBits = ONESTOPBIT;
-	dcb.fDtrControl = DTR_CONTROL_DISABLE;
-	if (!SetCommState(serialPort,&dcb))
-		return(false);
-}
-
-bool writeComPort(BYTE *message,int length)
-{
-	DWORD byteswritten;
-
-	bool retVal = WriteFile(serialPort,message,length,&byteswritten,NULL);
-	return retVal;
-}
-
-// Read from COM PORT and output to console
-bool readComPort()
-{
-	DWORD dwRead;
-	char m_pDataBuf[4096];
-	BYTE unbyte;
-	DWORD temp; 
-    COMSTAT comstat;
-	BOOL readResult;
-
-	// Get Serial stats
-	ClearCommError(serialPort,&temp,&comstat);
-
-	// New bytes pending read?
-	if (comstat.cbInQue>0)
-		{
-		ReadFile(serialPort,m_pDataBuf, comstat.cbInQue, &dwRead, NULL);
-		m_pDataBuf[dwRead] = 0;
-		sprintf(tempStr,"[%ld]",frameTimestamp-firstTimestamp);
-		fwrite(tempStr,strlen(tempStr),1,logFile);   
-		fwrite(m_pDataBuf,dwRead,1,logFile);
-		printf("%s\n",m_pDataBuf);
-		sprintf(logStr,"%s",m_pDataBuf);
-		}
-	return true;
-}
-
-
 // Send message to Serial port with the object information 14 bytes message
 bool sendMessage()
 {
@@ -474,7 +430,7 @@ bool sendMessage()
 	message[12] = (RposY>>8)&0xFF;
 	message[13] = RposY&0xFF;
 
-	return writeComPort(message,14); // Send message (14 bytes)
+//	return writeComPort(message,14); // Send message (14 bytes)
 }
 
 
@@ -495,7 +451,7 @@ int main(int argc, char* argv[]){
 	}
 	
 	// COM port 
-	swprintf_s(auxstr,L"\\\\.\\%S",argv[1]);
+	//swprintf_s(auxstr,L"\\\\.\\%S",argv[1]);
 
 	// Other parameters
 	if (argc==15)  // Full parameters
@@ -571,7 +527,7 @@ int main(int argc, char* argv[]){
 	cvNamedWindow("Video");     
     //cvNamedWindow("Processed");
 	cvWaitKey(1200);
-	openComPort(auxstr);  // L"\\\\.\\COM19");
+	//openComPort(auxstr);  // L"\\\\.\\COM19");
 	cvWaitKey(1000);
 	
 	//iterate through each frames of the video    
@@ -645,7 +601,7 @@ int main(int argc, char* argv[]){
 		cvReleaseImage(&frameGrabbed);
 		
 		// Sometnig to read on SerialPort?
-		readComPort();
+		//readComPort();
 
 		//Wait 1mS necesary???
 		int c = cvWaitKey(1);
