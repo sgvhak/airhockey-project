@@ -1,5 +1,9 @@
 #!/usr/bin/python
 
+import os
+import sys
+from ConfigParser import ConfigParser
+
 import cv2
 import numpy as np
 
@@ -19,6 +23,9 @@ HSV_MAX_VALS = (180, 255, 255)
 MIN_BAR_NAME = "min"
 MAX_BAR_NAME = "max"
 
+CONFIG_FILENAME = os.path.join(os.path.dirname(sys.argv[0]), "vision.cfg")
+HSV_CONFIG_SECTION_PREFIX = "HSV"
+
 ## GUI Stuff ##
 
 def add_hsv_trackbars(window_name):
@@ -31,6 +38,23 @@ def add_hsv_trackbars(window_name):
         cv2.createTrackbar('%s %s' % (color_name, MIN_BAR_NAME), window_name, 0, max_value, nothing)
         cv2.createTrackbar('%s %s' % (color_name, MAX_BAR_NAME), window_name, 0, max_value, nothing)
         cv2.setTrackbarPos('%s %s' % (color_name, MAX_BAR_NAME), window_name, max_value)
+
+def load_hsv_trackbars_values(window_name, config):
+    for color_name in HSV_NAMES:
+        for bar_name in (MIN_BAR_NAME, MAX_BAR_NAME):
+            section_name = '%s %s' % (HSV_CONFIG_SECTION_PREFIX, bar_name)
+            if config.has_option(section_name, color_name):
+                bar_val = config.get(section_name, color_name)
+                cv2.setTrackbarPos('%s %s' % (color_name, bar_name), window_name, int(bar_val))
+
+def save_hsv_trackbars_values(window_name, config):
+    for color_name in HSV_NAMES:
+        for bar_name in (MIN_BAR_NAME, MAX_BAR_NAME):
+            section_name = '%s %s' % (HSV_CONFIG_SECTION_PREFIX, bar_name)
+            if not config.has_section(section_name):
+                config.add_section(section_name) 
+            bar_val = cv2.getTrackbarPos('%s %s' % (color_name, bar_name), window_name)
+            config.set(section_name, color_name, str(bar_val))
 
 def hsv_values(window_name, bar_type):
     hsv_vals = []
@@ -72,6 +96,9 @@ def capture_loop():
         mask = cv2.inRange(thsv, hsv_min, hsv_max)
 
         contours, hierarchy = cv2.findContours(mask.copy(), mode=cv2.RETR_EXTERNAL, method=cv2.CHAIN_APPROX_SIMPLE)
+        
+        for cnt in contours: 
+            cv2.drawContours(mask, [cnt], 0, (0,255,0), 3)
 
         cv2.imshow(VID_WIN_NAME, oframe)
         cv2.imshow(OUT_WIN_NAME, mask)
@@ -83,9 +110,20 @@ def capture_loop():
     cap.release()
 
 def main():
+    config = ConfigParser()
+    config.read(CONFIG_FILENAME)
+
     create_windows()
+
+    load_hsv_trackbars_values(THRESH_WIN_NAME, config)
+
     capture_loop()
+
+    save_hsv_trackbars_values(THRESH_WIN_NAME, config)
+
     cv2.destroyAllWindows()
+
+    config.write(open(CONFIG_FILENAME, "w"))
 
 if __name__ == "__main__":
     main()
