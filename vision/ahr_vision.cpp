@@ -47,6 +47,9 @@
 #define CAM_PIX_HEIGHT 480
 #define CAM_PIX_TO_MM 1.4
 
+//#define CAMERA_NUMBER CV_CAP_ANY 
+#define CAMERA_NUMBER 1
+
 // Define Windows.h types
 typedef unsigned long DWORD;
 typedef char BYTE;
@@ -502,7 +505,7 @@ int main(int argc, char* argv[])
     }
 
     CvCapture* capture = 0;
-    capture = cvCaptureFromCAM(CV_CAP_ANY);
+    capture = cvCaptureFromCAM(CAMERA_NUMBER);
 
     // TAKE A VIDEO FROM FILE
     //capture = cvCaptureFromFile("pru.mpeg");
@@ -535,7 +538,7 @@ int main(int argc, char* argv[])
     cvZero(imgTracking); //covert the image, 'imgTracking' to black
 
     cvNamedWindow("Video");
-    //cvNamedWindow("Processed");
+    cvNamedWindow("Processed");
     cvWaitKey(1200);
     //openComPort(auxstr);  // L"\\\\.\\COM19");
     cvWaitKey(1000);
@@ -594,7 +597,7 @@ int main(int argc, char* argv[])
         // LOG TEXT
         cvPutText (frameGrabbed, logStr, cvPoint(20, 220), &font, cvScalar(50, 220, 220));
 
-        //cvShowImage("Processed", imgThresh);
+        cvShowImage("Processed", imgThresh);
         cvShowImage("Video", frameGrabbed);
 
         //Write image to output video
