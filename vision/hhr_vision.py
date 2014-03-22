@@ -97,11 +97,23 @@ def capture_loop():
 
         contours, hierarchy = cv2.findContours(mask.copy(), mode=cv2.RETR_EXTERNAL, method=cv2.CHAIN_APPROX_SIMPLE)
         
-        for cnt in contours: 
-            cv2.drawContours(mask, [cnt], 0, (0,255,0), 3)
+        largest_cnt = None
+        largest_area = -1 
+        for cnt in contours:
+            curr_area = cv2.contourArea(cnt)
+            if curr_area > largest_area:
+                largest_cnt = cnt
+
+        shape_overlay = cv2.cvtColor(mask, cv2.COLOR_GRAY2BGR)
+
+        #cv2.drawContours(shape_img, [cnt], 0, (0,0,255), 3)
+        (x,y), radius = cv2.minEnclosingCircle(largest_cnt)
+        center = (int(x),int(y))
+        radius = int(radius)
+        cv2.circle(shape_overlay, center,radius,(255,0,0),2)
 
         cv2.imshow(VID_WIN_NAME, oframe)
-        cv2.imshow(OUT_WIN_NAME, mask)
+        cv2.imshow(OUT_WIN_NAME, shape_overlay)
 
         if cv2.waitKey(1) & 0xFF == ord('q'):
             break
