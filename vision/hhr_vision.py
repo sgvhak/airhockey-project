@@ -13,7 +13,8 @@ VIDEO_SOURCE = 1
 
 # Names for various named windows
 VID_WIN_NAME = 'HHR - Video'
-THRESH_WIN_NAME = 'HHR - Thresholds'
+THRESH1_WIN_NAME = 'HHR - Thresholds 1'
+THRESH2_WIN_NAME = 'HHR - Thresholds 2'
 OUT_WIN_NAME = 'HHR - Output'
 
 # Names to use for the HSV color channels in track bars
@@ -21,11 +22,10 @@ HSV_NAMES = ('H', 'S', 'V')
 HSV_MAX_VALS = (180, 255, 255)
 
 # Name of the min and max in the HSV trackbars
-MIN_BAR_NAME = "min"
-MAX_BAR_NAME = "max"
+MIN_BAR_NAME = "Min"
+MAX_BAR_NAME = "Max"
 
 CONFIG_FILENAME = os.path.join(os.path.dirname(sys.argv[0]), "vision.cfg")
-HSV_CONFIG_SECTION_PREFIX = "HSV"
 
 ## GUI Stuff ##
 
@@ -40,10 +40,12 @@ def add_hsv_trackbars(window_name):
         cv2.createTrackbar('%s %s' % (color_name, MAX_BAR_NAME), window_name, 0, max_value, nothing)
         cv2.setTrackbarPos('%s %s' % (color_name, MAX_BAR_NAME), window_name, max_value)
 
+    cv2.createTrackbar('Enabled', window_name, 0, 1, nothing)
+
 def load_hsv_trackbars_values(window_name, config):
     for color_name in HSV_NAMES:
         for bar_name in (MIN_BAR_NAME, MAX_BAR_NAME):
-            section_name = '%s %s' % (HSV_CONFIG_SECTION_PREFIX, bar_name)
+            section_name = '%s %s' % (window_name, bar_name)
             if config.has_option(section_name, color_name):
                 bar_val = config.get(section_name, color_name)
                 cv2.setTrackbarPos('%s %s' % (color_name, bar_name), window_name, int(bar_val))
@@ -51,11 +53,19 @@ def load_hsv_trackbars_values(window_name, config):
 def save_hsv_trackbars_values(window_name, config):
     for color_name in HSV_NAMES:
         for bar_name in (MIN_BAR_NAME, MAX_BAR_NAME):
-            section_name = '%s %s' % (HSV_CONFIG_SECTION_PREFIX, bar_name)
+            section_name = '%s %s' % (window_name, bar_name)
             if not config.has_section(section_name):
                 config.add_section(section_name) 
             bar_val = cv2.getTrackbarPos('%s %s' % (color_name, bar_name), window_name)
             config.set(section_name, color_name, str(bar_val))
+
+def hsv_trackbars_enabled(window_name):
+    enab_val = cv2.getTrackbarPos('Enabled', window_name)
+
+    if enab_val:
+        return True
+    else:
+        return False
 
 def hsv_values(window_name, bar_type):
     hsv_vals = []
@@ -65,14 +75,13 @@ def hsv_values(window_name, bar_type):
 
 def create_windows():
     cv2.namedWindow(VID_WIN_NAME, cv2.WINDOW_AUTOSIZE)
-    cv2.namedWindow(THRESH_WIN_NAME, cv2.WINDOW_AUTOSIZE)
+    cv2.namedWindow(THRESH1_WIN_NAME, cv2.WINDOW_AUTOSIZE)
+    cv2.namedWindow(THRESH2_WIN_NAME, cv2.WINDOW_AUTOSIZE)
     cv2.namedWindow(OUT_WIN_NAME, cv2.WINDOW_AUTOSIZE)
-
-    add_hsv_trackbars(THRESH_WIN_NAME)
 
 ## ALG Stuff ##
 
-def detect_circular_object(frame, hsv_min, hsv_max, debug=False):
+def detect_circular_object(frame, hsv_min, hsv_max, circle_color, draw_contours=False):
         # Make a copy of the original frame so we can modify it
         hsv_frame = frame.copy()
 
@@ -94,22 +103,23 @@ def detect_circular_object(frame, hsv_min, hsv_max, debug=False):
             if curr_area > largest_area:
                 largest_cnt = cnt
 
-        if debug:
-            mask = cv2.cvtColor(mask, cv2.COLOR_GRAY2BGR)
+        # Convert mask back to color so we can draw on it
+        mask = cv2.cvtColor(mask, cv2.COLOR_GRAY2BGR)
 
+        if draw_contours:
             cv2.drawContours(mask, contours, -1, (0,0,255), 3)
 
         # Find the circle bounding the contour with the largest area
         # The x, y of this circle should be the center of our object
-        # With debugging enabled draw this circle in blue
+        # With debugging enabled draw this circle in the passed color
         x, y = -1, -1
         try:
-            (x, y), radius = cv2.minEnclosingCircle(largest_cnt)
-            center = (int(x), int(y))
-            radius = int(radius)
+            if largest_cnt != None:
+                (x, y), radius = cv2.minEnclosingCircle(largest_cnt)
+                center = (int(x), int(y))
+                radius = int(radius)
 
-            if debug:
-                cv2.circle(mask, center,radius,(255,0,0),2)
+                cv2.circle(mask, center,radius, circle_color, 2)
         except cv2.error as exc:
             # Errors will also be displayed by the C++ part
             logging.error("Failure to find enclosing circle")
@@ -123,14 +133,27 @@ def capture_loop():
         # Capture frame-by-frame
         ret, frame = cap.read()
 
-        hsv_min = hsv_values(THRESH_WIN_NAME, MIN_BAR_NAME)
-        hsv_max = hsv_values(THRESH_WIN_NAME, MAX_BAR_NAME)
+        if hsv_trackbars_enabled(THRESH1_WIN_NAME):
+            hsv1_min = hsv_values(THRESH1_WIN_NAME, MIN_BAR_NAME)
+            hsv1_max = hsv_values(THRESH1_WIN_NAME, MAX_BAR_NAME)
 
-        coords, mask = detect_circular_object(frame, hsv_min, hsv_max, debug=True)
+            coords1, mask1 = detect_circular_object(frame, hsv1_min, hsv1_max, (255,0,0))
+        else:
+            mask1 = np.zeros(frame.shape, np.uint8)
+
+        if hsv_trackbars_enabled(THRESH2_WIN_NAME):
+            hsv2_min = hsv_values(THRESH2_WIN_NAME, MIN_BAR_NAME)
+            hsv2_max = hsv_values(THRESH2_WIN_NAME, MAX_BAR_NAME)
+
+            coords2, mask2 = detect_circular_object(frame, hsv2_min, hsv2_max, (0,255,0))
+        else:
+            mask2 = np.zeros(frame.shape, np.uint8)
+
+        mask_combined = cv2.add(mask1, mask2)
 
         # Draw the original frame and our debugging frame in different windows
         cv2.imshow(VID_WIN_NAME, frame)
-        cv2.imshow(OUT_WIN_NAME, mask)
+        cv2.imshow(OUT_WIN_NAME, mask_combined)
 
         if cv2.waitKey(1) & 0xFF == ord('q'):
             break
@@ -143,12 +166,16 @@ def main():
     config.read(CONFIG_FILENAME)
 
     create_windows()
+    add_hsv_trackbars(THRESH1_WIN_NAME)
+    add_hsv_trackbars(THRESH2_WIN_NAME)
 
-    load_hsv_trackbars_values(THRESH_WIN_NAME, config)
+    load_hsv_trackbars_values(THRESH1_WIN_NAME, config)
+    load_hsv_trackbars_values(THRESH2_WIN_NAME, config)
 
     capture_loop()
 
-    save_hsv_trackbars_values(THRESH_WIN_NAME, config)
+    save_hsv_trackbars_values(THRESH1_WIN_NAME, config)
+    save_hsv_trackbars_values(THRESH2_WIN_NAME, config)
 
     cv2.destroyAllWindows()
 
