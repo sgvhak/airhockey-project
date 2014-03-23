@@ -106,7 +106,8 @@ def capture_loop():
 
         shape_overlay = cv2.cvtColor(mask, cv2.COLOR_GRAY2BGR)
 
-        #cv2.drawContours(shape_img, [cnt], 0, (0,0,255), 3)
+        cv2.drawContours(shape_overlay, contours, -1, (0,0,255), 3)
+
         (x,y), radius = cv2.minEnclosingCircle(largest_cnt)
         center = (int(x),int(y))
         radius = int(radius)
