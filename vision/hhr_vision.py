@@ -1,7 +1,8 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 
 import os
 import sys
+import logging
 from ConfigParser import ConfigParser
 
 import cv2
@@ -62,12 +63,6 @@ def hsv_values(window_name, bar_type):
         hsv_vals.append( cv2.getTrackbarPos('%s %s' % (color_name, bar_type), window_name) )
     return np.array(hsv_vals)
 
-def hsv_min_values():
-    return hsv_values(THRESH_WIN_NAME, MIN_BAR_NAME)
-
-def hsv_max_values():
-    return hsv_values(THRESH_WIN_NAME, MAX_BAR_NAME)
-
 def create_windows():
     cv2.namedWindow(VID_WIN_NAME, cv2.WINDOW_AUTOSIZE)
     cv2.namedWindow(THRESH_WIN_NAME, cv2.WINDOW_AUTOSIZE)
@@ -77,32 +72,19 @@ def create_windows():
 
 ## ALG Stuff ##
 
-def capture_loop():
-    cap = cv2.VideoCapture(1)
-
-    while(True):
-        # Capture frame-by-frame
-        ret, oframe = cap.read()
-
+def detect_circular_object(frame, hsv_min, hsv_max, debug=False):
         # Make a copy of the original frame so we can modify it
-        tframe = oframe.copy()
+        hsv_frame = frame.copy()
 
-        # Blur the image to help reduce noise going into color masking
-        tframe = cv2.GaussianBlur(tframe, (5,5), 0)
-
-        # Convert from BGR to HSV then use ranges to seperate out the object we ae interested in
-        thsv = cv2.cvtColor(tframe, cv2.COLOR_BGR2HSV);
-
-        hsv_min = hsv_min_values()
-        hsv_max = hsv_max_values()
-
-        mask = cv2.inRange(thsv, hsv_min, hsv_max)
+        # Convert from BGR to HSV then use ranges to seperate out the object we are interested in
+        hsv_frame = cv2.cvtColor(hsv_frame, cv2.COLOR_BGR2HSV);
+        mask = cv2.inRange(hsv_frame, hsv_min, hsv_max)
 
         # Try reduce amount speckles around the object we are detecting
-        mask = cv2.medianBlur(mask, 5)
+        mask = cv2.medianBlur(mask, 7)
 
-        # Find all contours in the mask, draw all of them in red but find the circle bounding the contour 
-        # with the largest are and draw that in blue, the x, y of this circle should be the center of our object
+        # Find all contours in the mask
+        # With debugging enabled draw all of them in red
         contours, hierarchy = cv2.findContours(mask.copy(), mode=cv2.RETR_EXTERNAL, method=cv2.CHAIN_APPROX_SIMPLE)
         
         largest_cnt = None
@@ -112,18 +94,43 @@ def capture_loop():
             if curr_area > largest_area:
                 largest_cnt = cnt
 
-        shape_overlay = cv2.cvtColor(mask, cv2.COLOR_GRAY2BGR)
+        if debug:
+            mask = cv2.cvtColor(mask, cv2.COLOR_GRAY2BGR)
 
-        cv2.drawContours(shape_overlay, contours, -1, (0,0,255), 3)
+            cv2.drawContours(mask, contours, -1, (0,0,255), 3)
 
-        (x,y), radius = cv2.minEnclosingCircle(largest_cnt)
-        center = (int(x),int(y))
-        radius = int(radius)
-        cv2.circle(shape_overlay, center,radius,(255,0,0),2)
+        # Find the circle bounding the contour with the largest area
+        # The x, y of this circle should be the center of our object
+        # With debugging enabled draw this circle in blue
+        x, y = -1, -1
+        try:
+            (x, y), radius = cv2.minEnclosingCircle(largest_cnt)
+            center = (int(x), int(y))
+            radius = int(radius)
+
+            if debug:
+                cv2.circle(mask, center,radius,(255,0,0),2)
+        except cv2.error as exc:
+            # Errors will also be displayed by the C++ part
+            logging.error("Failure to find enclosing circle")
+
+        return (x,y), mask
+
+def capture_loop():
+    cap = cv2.VideoCapture(1)
+
+    while(True):
+        # Capture frame-by-frame
+        ret, frame = cap.read()
+
+        hsv_min = hsv_values(THRESH_WIN_NAME, MIN_BAR_NAME)
+        hsv_max = hsv_values(THRESH_WIN_NAME, MAX_BAR_NAME)
+
+        coords, mask = detect_circular_object(frame, hsv_min, hsv_max, debug=True)
 
         # Draw the original frame and our debugging frame in different windows
-        cv2.imshow(VID_WIN_NAME, oframe)
-        cv2.imshow(OUT_WIN_NAME, shape_overlay)
+        cv2.imshow(VID_WIN_NAME, frame)
+        cv2.imshow(OUT_WIN_NAME, mask)
 
         if cv2.waitKey(1) & 0xFF == ord('q'):
             break
