@@ -84,10 +84,13 @@ def capture_loop():
         # Capture frame-by-frame
         ret, oframe = cap.read()
 
-        # Our operations on the frame come here
+        # Make a copy of the original frame so we can modify it
         tframe = oframe.copy()
 
+        # Blur the image to help reduce noise going into color masking
         tframe = cv2.GaussianBlur(tframe, (5,5), 0)
+
+        # Convert from BGR to HSV then use ranges to seperate out the object we ae interested in
         thsv = cv2.cvtColor(tframe, cv2.COLOR_BGR2HSV);
 
         hsv_min = hsv_min_values()
@@ -95,6 +98,11 @@ def capture_loop():
 
         mask = cv2.inRange(thsv, hsv_min, hsv_max)
 
+        # Try reduce amount speckles around the object we are detecting
+        mask = cv2.medianBlur(mask, 5)
+
+        # Find all contours in the mask, draw all of them in red but find the circle bounding the contour 
+        # with the largest are and draw that in blue, the x, y of this circle should be the center of our object
         contours, hierarchy = cv2.findContours(mask.copy(), mode=cv2.RETR_EXTERNAL, method=cv2.CHAIN_APPROX_SIMPLE)
         
         largest_cnt = None
@@ -113,6 +121,7 @@ def capture_loop():
         radius = int(radius)
         cv2.circle(shape_overlay, center,radius,(255,0,0),2)
 
+        # Draw the original frame and our debugging frame in different windows
         cv2.imshow(VID_WIN_NAME, oframe)
         cv2.imshow(OUT_WIN_NAME, shape_overlay)
 
