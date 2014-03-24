@@ -10,6 +10,8 @@ import numpy as np
 
 # Which video device to use
 VIDEO_SOURCE = 1
+CAPTURE_WIDTH = 320
+CAPTURE_HEIGHT = 240
 
 # Names for various named windows
 VID_WIN_NAME = 'HHR - Video'
@@ -127,9 +129,13 @@ def detect_circular_object(frame, hsv_min, hsv_max, circle_color, draw_contours=
         return (x,y), mask
 
 def capture_loop():
-    cap = cv2.VideoCapture(1)
+    cap = cv2.VideoCapture(VIDEO_SOURCE)
+    cap.set(cv2.cv.CV_CAP_PROP_FRAME_WIDTH, CAPTURE_WIDTH)
+    cap.set(cv2.cv.CV_CAP_PROP_FRAME_HEIGHT, CAPTURE_HEIGHT)
 
     while(True):
+        time_beg = cv2.getTickCount()
+
         # Capture frame-by-frame
         ret, frame = cap.read()
 
@@ -150,6 +156,11 @@ def capture_loop():
             mask2 = np.zeros(frame.shape, np.uint8)
 
         mask_combined = cv2.add(mask1, mask2)
+
+        time_end = (cv2.getTickCount() - time_beg) / cv2.getTickFrequency()
+
+        # Write FPS to frame
+        cv2.putText(frame, '%2.3f FPS' % (1.0 / time_end), (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (255,255,255))
 
         # Draw the original frame and our debugging frame in different windows
         cv2.imshow(VID_WIN_NAME, frame)
