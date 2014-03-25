@@ -9,7 +9,7 @@ import cv2
 import numpy as np
 
 # Which video device to use
-VIDEO_SOURCE = 1
+VIDEO_SOURCE = len(sys.argv) > 1 and int(sys.argv[1]) or 0
 CAPTURE_WIDTH = 320
 CAPTURE_HEIGHT = 240
 
@@ -28,6 +28,9 @@ MIN_BAR_NAME = "Min"
 MAX_BAR_NAME = "Max"
 
 CONFIG_FILENAME = os.path.join(os.path.dirname(sys.argv[0]), "vision.cfg")
+
+# How many time values to save for averaging for calculating FPS
+NUM_TIME_RECORDS = 5
 
 ## GUI Stuff ##
 
@@ -76,10 +79,10 @@ def hsv_values(window_name, bar_type):
     return np.array(hsv_vals)
 
 def create_windows():
-    cv2.namedWindow(VID_WIN_NAME, cv2.WINDOW_AUTOSIZE)
     cv2.namedWindow(THRESH1_WIN_NAME, cv2.WINDOW_AUTOSIZE)
     cv2.namedWindow(THRESH2_WIN_NAME, cv2.WINDOW_AUTOSIZE)
     cv2.namedWindow(OUT_WIN_NAME, cv2.WINDOW_AUTOSIZE)
+    cv2.namedWindow(VID_WIN_NAME, cv2.WINDOW_AUTOSIZE)
 
 ## ALG Stuff ##
 
@@ -133,6 +136,9 @@ def capture_loop():
     cap.set(cv2.cv.CV_CAP_PROP_FRAME_WIDTH, CAPTURE_WIDTH)
     cap.set(cv2.cv.CV_CAP_PROP_FRAME_HEIGHT, CAPTURE_HEIGHT)
 
+    time_records = np.zeros(NUM_TIME_RECORDS, float)
+    time_rec_idx = 0
+    time_total = 0
     while(True):
         time_beg = cv2.getTickCount()
 
@@ -159,8 +165,17 @@ def capture_loop():
 
         time_end = (cv2.getTickCount() - time_beg) / cv2.getTickFrequency()
 
+        # Record time value in a rolling sum where the oldest falls off
+        # This way we can smooth out the FPS value
+        oldest_val = time_records[time_rec_idx]
+        if oldest_val > 0:
+            time_total -= oldest_val 
+        time_total += time_end 
+        time_records[time_rec_idx] = time_end
+        time_rec_idx = (time_rec_idx + 1) % NUM_TIME_RECORDS
+
         # Write FPS to frame
-        cv2.putText(frame, '%2.3f FPS' % (1.0 / time_end), (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (255,255,255))
+        cv2.putText(frame, '%2.2f FPS' % (NUM_TIME_RECORDS / time_total), (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (255,255,255))
 
         # Draw the original frame and our debugging frame in different windows
         cv2.imshow(VID_WIN_NAME, frame)
