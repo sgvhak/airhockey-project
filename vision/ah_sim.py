@@ -7,6 +7,7 @@ from pygame.color import *
 import pymunk
 from pymunk import Vec2d
 import math, sys, random
+import numpy as np
 
 WINW=320
 WINH=240
@@ -110,7 +111,7 @@ class AirHockey(object):
             p2 = to_pygame(pv2)
             pygame.draw.lines(self.screen, THECOLORS["black"], False, [p1,p2])
  
-    def game_frame(self):
+    def process_frame(self):
         running = True
 
         mpos = pygame.mouse.get_pos()
@@ -173,6 +174,10 @@ class AirHockey(object):
         pygame.display.set_caption("fps: " + str(self.clock.get_fps()))
 
         return running
+
+    def get_frame(self):
+        frame = np.fromstring(pygame.image.tostring(self.screen, 'RGB'), dtype=np.uint8).reshape((WINH, WINW, 3))
+        return frame
 
 if __name__ == "__main__":
     ah = AirHockey()

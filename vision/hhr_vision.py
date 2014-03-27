@@ -8,6 +8,8 @@ from ConfigParser import ConfigParser
 import cv2
 import numpy as np
 
+from ah_sim import AirHockey
+
 # Which video device to use
 VIDEO_SOURCE = len(sys.argv) > 1 and int(sys.argv[1]) or 0
 CAPTURE_WIDTH = 320
@@ -131,7 +133,7 @@ def detect_circular_object(frame, hsv_min, hsv_max, circle_color, draw_contours=
 
         return (x,y), mask
 
-def capture_loop():
+def capture_loop(sim=None):
     cap = cv2.VideoCapture(VIDEO_SOURCE)
     cap.set(cv2.cv.CV_CAP_PROP_FRAME_WIDTH, CAPTURE_WIDTH)
     cap.set(cv2.cv.CV_CAP_PROP_FRAME_HEIGHT, CAPTURE_HEIGHT)
@@ -143,7 +145,11 @@ def capture_loop():
         time_beg = cv2.getTickCount()
 
         # Capture frame-by-frame
-        ret, frame = cap.read()
+        if sim:
+            sim.process_frame()
+            frame = sim.get_frame()
+        else:
+            ret, frame = cap.read()
 
         if hsv_trackbars_enabled(THRESH1_WIN_NAME):
             hsv1_min = hsv_values(THRESH1_WIN_NAME, MIN_BAR_NAME)
@@ -175,7 +181,7 @@ def capture_loop():
         time_rec_idx = (time_rec_idx + 1) % NUM_TIME_RECORDS
 
         # Write FPS to frame
-        cv2.putText(frame, '%2.2f FPS' % (NUM_TIME_RECORDS / time_total), (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (255,255,255))
+        cv2.putText(frame, '%2.2f FPS' % (NUM_TIME_RECORDS / time_total), (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (0,0,255))
 
         # Draw the original frame and our debugging frame in different windows
         cv2.imshow(VID_WIN_NAME, frame)
@@ -198,7 +204,9 @@ def main():
     load_hsv_trackbars_values(THRESH1_WIN_NAME, config)
     load_hsv_trackbars_values(THRESH2_WIN_NAME, config)
 
-    capture_loop()
+    sim = AirHockey()
+
+    capture_loop(sim)
 
     save_hsv_trackbars_values(THRESH1_WIN_NAME, config)
     save_hsv_trackbars_values(THRESH2_WIN_NAME, config)
