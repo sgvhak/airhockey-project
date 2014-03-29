@@ -3,6 +3,7 @@
 import os
 import sys
 import logging
+from abc import ABCMeta, abstractmethod
 from ConfigParser import ConfigParser
 
 import cv2
@@ -35,50 +36,83 @@ CONFIG_FILENAME = os.path.join(os.path.dirname(sys.argv[0]), "vision.cfg")
 NUM_TIME_RECORDS = 5
 
 ## GUI Stuff ##
+class HSVThreshold(object):
+    __metaclass__ = ABCMeta
 
-def add_hsv_trackbars(window_name):
-    # Empty call back for trackbars
-    def nothing(x):
-        pass
+    @abstractmethod
+    def min_values(self):
+        "Returns a numpy array with the 3 HSV minimum values"
+        return
 
-    # create trackbars for color range
-    for color_name, max_value in zip(HSV_NAMES, HSV_MAX_VALS):
-        cv2.createTrackbar('%s %s' % (color_name, MIN_BAR_NAME), window_name, 0, max_value, nothing)
-        cv2.createTrackbar('%s %s' % (color_name, MAX_BAR_NAME), window_name, 0, max_value, nothing)
-        cv2.setTrackbarPos('%s %s' % (color_name, MAX_BAR_NAME), window_name, max_value)
+    @abstractmethod
+    def max_values(self):
+        "Returns a numpy array with the 3 HSV maximum values"
+        return
 
-    cv2.createTrackbar('Enabled', window_name, 0, 1, nothing)
+    @abstractmethod
+    def enabled(self):
+        "Return true if this threshold is enabled"
+        return
 
-def load_hsv_trackbars_values(window_name, config):
-    for color_name in HSV_NAMES:
-        for bar_name in (MIN_BAR_NAME, MAX_BAR_NAME):
-            section_name = '%s %s' % (window_name, bar_name)
-            if config.has_option(section_name, color_name):
-                bar_val = config.get(section_name, color_name)
-                cv2.setTrackbarPos('%s %s' % (color_name, bar_name), window_name, int(bar_val))
+class HSVTrackBars(HSVThreshold):
 
-def save_hsv_trackbars_values(window_name, config):
-    for color_name in HSV_NAMES:
-        for bar_name in (MIN_BAR_NAME, MAX_BAR_NAME):
-            section_name = '%s %s' % (window_name, bar_name)
-            if not config.has_section(section_name):
-                config.add_section(section_name) 
-            bar_val = cv2.getTrackbarPos('%s %s' % (color_name, bar_name), window_name)
-            config.set(section_name, color_name, str(bar_val))
+    def __init__(self, window_name, config=None):
+        self.window_name = window_name
+        
+        self._add_to_window()
 
-def hsv_trackbars_enabled(window_name):
-    enab_val = cv2.getTrackbarPos('Enabled', window_name)
+        if config:
+            self.load_config(config)
 
-    if enab_val:
-        return True
-    else:
-        return False
+    def _add_to_window(self):
+        # Empty call back for trackbars
+        def nothing(x):
+            pass
 
-def hsv_values(window_name, bar_type):
-    hsv_vals = []
-    for color_name in HSV_NAMES:
-        hsv_vals.append( cv2.getTrackbarPos('%s %s' % (color_name, bar_type), window_name) )
-    return np.array(hsv_vals)
+        # create trackbars for color range
+        for color_name, max_value in zip(HSV_NAMES, HSV_MAX_VALS):
+            cv2.createTrackbar('%s %s' % (color_name, MIN_BAR_NAME), self.window_name, 0, max_value, nothing)
+            cv2.createTrackbar('%s %s' % (color_name, MAX_BAR_NAME), self.window_name, 0, max_value, nothing)
+            cv2.setTrackbarPos('%s %s' % (color_name, MAX_BAR_NAME), self.window_name, max_value)
+
+        cv2.createTrackbar('Enabled', self.window_name, 0, 1, nothing)
+
+    def load_config(self, config):
+        for color_name in HSV_NAMES:
+            for bar_name in (MIN_BAR_NAME, MAX_BAR_NAME):
+                section_name = '%s %s' % (self.window_name, bar_name)
+                if config.has_option(section_name, color_name):
+                    bar_val = config.get(section_name, color_name)
+                    cv2.setTrackbarPos('%s %s' % (color_name, bar_name), self.window_name, int(bar_val))
+
+    def save_config(self, config):
+        for color_name in HSV_NAMES:
+            for bar_name in (MIN_BAR_NAME, MAX_BAR_NAME):
+                section_name = '%s %s' % (self.window_name, bar_name)
+                if not config.has_section(section_name):
+                    config.add_section(section_name) 
+                bar_val = cv2.getTrackbarPos('%s %s' % (color_name, bar_name), self.window_name)
+                config.set(section_name, color_name, str(bar_val))
+
+    def enabled(self):
+        enab_val = cv2.getTrackbarPos('Enabled', self.window_name)
+
+        if enab_val:
+            return True
+        else:
+            return False
+
+    def values(self, bar_type):
+        hsv_vals = []
+        for color_name in HSV_NAMES:
+            hsv_vals.append( cv2.getTrackbarPos('%s %s' % (color_name, bar_type), self.window_name) )
+        return np.array(hsv_vals)
+
+    def min_values(self):
+        return self.values(MIN_BAR_NAME)
+
+    def max_values(self):
+        return self.values(MAX_BAR_NAME)
 
 def create_windows():
     cv2.namedWindow(THRESH1_WIN_NAME, cv2.WINDOW_AUTOSIZE)
@@ -133,7 +167,7 @@ def detect_circular_object(frame, hsv_min, hsv_max, circle_color, draw_contours=
 
         return (x,y), mask
 
-def capture_loop(sim=None):
+def capture_loop(thresholds):
     cap = cv2.VideoCapture(VIDEO_SOURCE)
     cap.set(cv2.cv.CV_CAP_PROP_FRAME_WIDTH, CAPTURE_WIDTH)
     cap.set(cv2.cv.CV_CAP_PROP_FRAME_HEIGHT, CAPTURE_HEIGHT)
@@ -145,29 +179,21 @@ def capture_loop(sim=None):
         time_beg = cv2.getTickCount()
 
         # Capture frame-by-frame
+        sim = False
         if sim:
             sim.process_frame()
             frame = sim.get_frame()
         else:
             ret, frame = cap.read()
 
-        if hsv_trackbars_enabled(THRESH1_WIN_NAME):
-            hsv1_min = hsv_values(THRESH1_WIN_NAME, MIN_BAR_NAME)
-            hsv1_max = hsv_values(THRESH1_WIN_NAME, MAX_BAR_NAME)
+        mask = np.zeros(frame.shape, np.uint8)
+        for thresh in thresholds:
+            if thresh.enabled():
+                hsv_min = thresh.min_values()
+                hsv_max = thresh.max_values()
 
-            coords1, mask1 = detect_circular_object(frame, hsv1_min, hsv1_max, (255,0,0))
-        else:
-            mask1 = np.zeros(frame.shape, np.uint8)
-
-        if hsv_trackbars_enabled(THRESH2_WIN_NAME):
-            hsv2_min = hsv_values(THRESH2_WIN_NAME, MIN_BAR_NAME)
-            hsv2_max = hsv_values(THRESH2_WIN_NAME, MAX_BAR_NAME)
-
-            coords2, mask2 = detect_circular_object(frame, hsv2_min, hsv2_max, (0,255,0))
-        else:
-            mask2 = np.zeros(frame.shape, np.uint8)
-
-        mask_combined = cv2.add(mask1, mask2)
+                coords1, thresh_mask = detect_circular_object(frame, hsv_min, hsv_max, (255,0,0))
+                mask = cv2.add(mask, thresh_mask)
 
         time_end = (cv2.getTickCount() - time_beg) / cv2.getTickFrequency()
 
@@ -185,7 +211,7 @@ def capture_loop(sim=None):
 
         # Draw the original frame and our debugging frame in different windows
         cv2.imshow(VID_WIN_NAME, frame)
-        cv2.imshow(OUT_WIN_NAME, mask_combined)
+        cv2.imshow(OUT_WIN_NAME, mask)
 
         if cv2.waitKey(1) & 0xFF == ord('q'):
             break
@@ -198,18 +224,17 @@ def main():
     config.read(CONFIG_FILENAME)
 
     create_windows()
-    add_hsv_trackbars(THRESH1_WIN_NAME)
-    add_hsv_trackbars(THRESH2_WIN_NAME)
 
-    load_hsv_trackbars_values(THRESH1_WIN_NAME, config)
-    load_hsv_trackbars_values(THRESH2_WIN_NAME, config)
+    thresholds = []
+    for tname in [THRESH1_WIN_NAME, THRESH2_WIN_NAME]:
+        thresholds.append( HSVTrackBars(tname, config) )
 
     sim = AirHockey()
 
-    capture_loop(sim)
+    capture_loop(thresholds=thresholds)
 
-    save_hsv_trackbars_values(THRESH1_WIN_NAME, config)
-    save_hsv_trackbars_values(THRESH2_WIN_NAME, config)
+    for thresh in thresholds:
+        thresh.save_config(config)
 
     cv2.destroyAllWindows()
 
