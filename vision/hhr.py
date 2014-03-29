@@ -11,7 +11,7 @@ from hhr import gui, vision, strategy
 DFLT_CAPTURE_SOURCE = 0
 DFLT_CAPTURE_WIDTH = 320
 DFLT_CAPTURE_HEIGHT = 240
-DFLT_CONFIG_FILENAME = os.path.join(os.path.dirname(sys.argv[0]), "vision.cfg")
+DFLT_CONFIG_FILENAME = os.path.join(os.path.dirname(sys.argv[0]), "hhr.cfg")
 
 def main():
     parser = argparse.ArgumentParser(description='SGVHAK Hockey Robot Player')
@@ -48,7 +48,11 @@ def main():
         parser.error("Unknown capture source: %s" % args.capture_source)
 
     vis = vision.Vision(source, predictors)
-    vis.capture_loop()
+
+    try:
+        vis.capture_loop()
+    except vision.NoVideoSourceError:
+        print "No video source found. You may need to specify use of a simulated video source."
 
     for thresh in thresholds:
         thresh.save_config(config)
