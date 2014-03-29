@@ -11,7 +11,7 @@ from hhr import gui, vision
 DFLT_CAPTURE_SOURCE = 0
 DFLT_CAPTURE_WIDTH = 320
 DFLT_CAPTURE_HEIGHT = 240
-DFLT_CONFIG_FILENAME = os.path.join(os.path.dirname(sys.argv[0]), "vision.cfg")
+DFLT_CONFIG_FILENAME = os.path.join(os.path.dirname(sys.argv[0]), "hhr.cfg")
 
 def main():
     parser = argparse.ArgumentParser(description='SGVHAK Hockey Robot Player')
