@@ -56,12 +56,15 @@ def detect_circular_object(frame, hsv_min, hsv_max, circle_color, draw_contours=
 
 class CV2CaptureSource(CaptureSource):
     def __init__(self, video_id, width, height):
+        self.video_id = video_id
         self.cap = cv2.VideoCapture(video_id)
         self.cap.set(cv2.cv.CV_CAP_PROP_FRAME_WIDTH, width)
         self.cap.set(cv2.cv.CV_CAP_PROP_FRAME_HEIGHT, height)
 
     def frame(self):
         ret, frame = self.cap.read()
+        if not ret:
+            raise Exception("OpenCV could not access video source: %s" % self.video_id)
         return frame
 
     def release(self):
