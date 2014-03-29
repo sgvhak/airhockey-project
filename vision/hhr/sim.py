@@ -9,48 +9,75 @@ from pymunk import Vec2d
 import math, sys, random
 import numpy as np
 
-class AirHockey(object):
+class AirHockeyTable(object):
 
     def __init__(self, width, height):
-        pygame.init()
-
         ## Balls
-        self.balls = []
+        self.pucks = []
            
-        ## players
-        self.players = []
-
         self.width = width
         self.height = height
-
-        self.screen = pygame.display.set_mode((self.width, self.height))
-        self.clock = pygame.time.Clock()
 
         ### Physics stuff
         self.space = pymunk.Space(50)
         self.space.gravity = (0.0,0.0)
 
         # Wall thickness
-        self.wt=5.0
+        self.wt = 5.0
 
         # Goal width
-        self.gw=self.width/4.0
+        self.gw = self.width/4.0
 
         ### walls
         static_body = pymunk.Body()
         self.static_lines = [pymunk.Segment(static_body, (self.wt, self.wt), (self.width-self.wt, self.wt), 1.0),
-                        pymunk.Segment(static_body, (self.wt, self.height-self.wt), (self.width-self.wt, self.height-self.wt), 1.0),
-                        pymunk.Segment(static_body, (self.wt, self.wt), (self.wt, (self.height-self.gw)/2), 1.0),
-                        pymunk.Segment(static_body, (self.wt, (self.height+self.gw)/2), (self.wt, self.height-self.wt), 1.0),
-                        pymunk.Segment(static_body, (self.width-self.wt, self.wt), ((self.width-self.wt), (self.height-self.gw)/2), 1.0),
-                        pymunk.Segment(static_body, (self.width-self.wt, (self.height+self.gw)/2), (self.width-self.wt, self.height-self.wt), 1.0)
-                        ]  
+                             pymunk.Segment(static_body, (self.wt, self.height-self.wt), (self.width-self.wt, self.height-self.wt), 1.0),
+                             pymunk.Segment(static_body, (self.wt, self.wt), (self.wt, (self.height-self.gw)/2), 1.0),
+                             pymunk.Segment(static_body, (self.wt, (self.height+self.gw)/2), (self.wt, self.height-self.wt), 1.0),
+                             pymunk.Segment(static_body, (self.width-self.wt, self.wt), ((self.width-self.wt), (self.height-self.gw)/2), 1.0),
+                             pymunk.Segment(static_body, (self.width-self.wt, (self.height+self.gw)/2), (self.width-self.wt, self.height-self.wt), 1.0)
+                             ]  
         for line in self.static_lines:
             line.elasticity = 0.7
             line.group = 1
         self.space.add(self.static_lines)
 
+        # Add the ball
+        self.add_puck()
+
+    def add_puck(self):
+        radius=10
+        mass=1
+        inertia = pymunk.moment_for_circle(mass, 0, radius, (0,0))
+        ball_body = pymunk.Body(mass, inertia)
+        ball_body.position=(self.width/2,self.height/2)
+
+        mainball = pymunk.Circle(ball_body, radius, (0,0))
+        mainball.elasticity = 0.95
+        self.space.add(ball_body, mainball)
+        self.pucks.append(mainball)
+        #ball_body.apply_impulse((40.0,0.0), (0,0))
+
+class AirHockeyGame(AirHockeyTable):
+
+    def __init__(self, width, height):
+        super(AirHockeyGame, self).__init__(width, height)
+        
+        pygame.init()
+
+        ## players
+        self.players = [] 
+
+        self.screen = pygame.display.set_mode((self.width, self.height))
+        self.clock = pygame.time.Clock()
+
         # Setup Player 1
+        self.add_player()
+
+        self.mouse_body = pymunk.Body()
+        self.joint1=None
+
+    def add_player(self):
         pmass=3
         pradius=20
         p1inertia = pymunk.moment_for_circle(pmass, 0, pradius, (0,0))
@@ -61,26 +88,6 @@ class AirHockey(object):
         self.p1_shape.elasticity = 0.95
         self.space.add(self.p1_body, self.p1_shape)
         self.players.append(self.p1_shape)
-
-        self.mouse_body = pymunk.Body()
-        self.joint1=None
-        selected = None
-
-        # Add the ball
-        self.addball()
-
-    def addball(self):
-        radius=10
-        mass=1
-        inertia = pymunk.moment_for_circle(mass, 0, radius, (0,0))
-        ball_body = pymunk.Body(mass, inertia)
-        ball_body.position=(self.width/2,self.height/2)
-
-        mainball = pymunk.Circle(ball_body, radius, (0,0))
-        mainball.elasticity = 0.95
-        self.space.add(ball_body, mainball)
-        self.balls.append(mainball)
-        #ball_body.apply_impulse((40.0,0.0), (0,0))
 
     def draw_table(self):
         pygame.draw.rect(self.screen, THECOLORS["brown"], [[0.0, 0.0], [self.width, self.wt]], 0)
@@ -136,7 +143,7 @@ class AirHockey(object):
         ### Draw 
         self.draw_table()
 
-        for ball in self.balls:
+        for ball in self.pucks:
             p = self.to_pygame(ball.body.position)
             #if p[0] < 0:
             #    score['p1'] += 1
@@ -144,9 +151,9 @@ class AirHockey(object):
             #    score['p2'] += 1
 
             if p[0] < 0 or p[0]>self.width:
-                self.addball()
+                self.add_puck()
                 self.space.remove(ball)
-                self.balls.remove(ball)
+                self.pucks.remove(ball)
 
             pygame.draw.circle(self.screen, THECOLORS["purple"], p, int(ball.radius), 0)
 

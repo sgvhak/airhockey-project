@@ -3,7 +3,7 @@ import cv2
 import numpy as np
 
 from .interface import CaptureSource
-from .sim import AirHockey
+from .sim import AirHockeyTable, AirHockeyGame
 from .gui import VID_WIN_NAME, OUT_WIN_NAME
 
 # How many time values to save for averaging for calculating FPS
@@ -69,7 +69,7 @@ class CV2CaptureSource(CaptureSource):
 
 class SimulatedCaptureSource(CaptureSource):
     def __init__(self, width, height):
-        self.sim = AirHockey(width, height)
+        self.sim = AirHockeyGame(width, height)
 
     def frame(self):
         self.sim.process_frame()
