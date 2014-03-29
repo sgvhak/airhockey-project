@@ -9,6 +9,9 @@ from .gui import VID_WIN_NAME, OUT_WIN_NAME
 # How many time values to save for averaging for calculating FPS
 NUM_TIME_RECORDS = 5
 
+class NoVideoSourceError(Exception):
+    pass
+
 def detect_circular_object(frame, hsv_min, hsv_max, circle_color, draw_contours=False):
     # Make a copy of the original frame so we can modify it
     hsv_frame = frame.copy()
@@ -64,7 +67,7 @@ class CV2CaptureSource(CaptureSource):
     def frame(self):
         ret, frame = self.cap.read()
         if not ret:
-            raise Exception("OpenCV could not access video source: %s" % self.video_id)
+            raise NoVideoSourceError("OpenCV could not access video source: %s" % self.video_id)
         return frame
 
     def release(self):

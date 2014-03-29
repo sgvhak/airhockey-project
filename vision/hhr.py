@@ -47,7 +47,11 @@ def main():
         parser.error("Unknown capture source: %s" % args.capture_source)
 
     vis = vision.Vision(source, thresholds)
-    vis.capture_loop()
+
+    try:
+        vis.capture_loop()
+    except vision.NoVideoSourceError:
+        print "No video source found. You may need to specify use of a simulated video source."
 
     for thresh in thresholds:
         thresh.save_config(config)
