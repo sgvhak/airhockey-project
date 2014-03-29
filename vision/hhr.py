@@ -5,7 +5,7 @@ import sys
 from ConfigParser import ConfigParser
 import argparse
 
-from hhr import gui, vision
+from hhr import gui, vision, strategy
 
 # Default values for command line arguments
 DFLT_CAPTURE_SOURCE = 0
@@ -36,7 +36,8 @@ def main():
 
     gui.create_windows()
 
-    thresholds = gui.create_trackbars(config)
+    thresholds = gui.create_trackbars(config, 1)
+    predictors = map(lambda t: strategy.TableSimPredictor(t, args.capture_width, args.capture_height), thresholds)
 
     source = None
     if type(args.capture_source) is int or args.capture_source.isdigit():
@@ -46,7 +47,7 @@ def main():
     else:
         parser.error("Unknown capture source: %s" % args.capture_source)
 
-    vis = vision.Vision(source, thresholds)
+    vis = vision.Vision(source, predictors)
     vis.capture_loop()
 
     for thresh in thresholds:

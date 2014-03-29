@@ -3,7 +3,7 @@ import cv2
 import numpy as np
 
 from .interface import CaptureSource
-from .sim import AirHockeyTable, AirHockeyGame
+from .sim import AirHockeyGame
 from .gui import VID_WIN_NAME, OUT_WIN_NAME
 
 # How many time values to save for averaging for calculating FPS
@@ -84,9 +84,9 @@ class SimulatedCaptureSource(CaptureSource):
         pass
 
 class Vision(object):
-    def __init__(self, source, thresholds):
-        self.thresholds = thresholds
+    def __init__(self, source, predictors):
         self.source = source
+        self.predictors = predictors
 
     def capture_loop(self):
         time_records = np.zeros(NUM_TIME_RECORDS, float)
@@ -99,12 +99,15 @@ class Vision(object):
             frame = self.source.frame()
 
             mask = np.zeros(frame.shape, np.uint8)
-            for thresh in self.thresholds:
-                if thresh.enabled():
+            for pred in self.predictors:
+                thresh = pred.threshold()
+                if thresh != None and thresh.enabled():
                     hsv_min = thresh.min_values()
                     hsv_max = thresh.max_values()
 
-                    coords1, radius, thresh_mask = detect_circular_object(frame, hsv_min, hsv_max, (255,0,0))
+                    coords, radius, thresh_mask = detect_circular_object(frame, hsv_min, hsv_max, (255,0,0))
+                    pred.add_puck_event(cv2.getTickCount(), coords, radius)
+
                     mask = cv2.add(mask, thresh_mask)
 
             time_end = (cv2.getTickCount() - time_beg) / cv2.getTickFrequency()
