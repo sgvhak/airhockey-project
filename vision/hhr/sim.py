@@ -12,9 +12,6 @@ import numpy as np
 class AirHockeyTable(object):
 
     def __init__(self, width, height):
-        ## Balls
-        self.pucks = []
-           
         self.width = width
         self.height = height
 
@@ -42,21 +39,23 @@ class AirHockeyTable(object):
             line.group = 1
         self.space.add(self.static_lines)
 
-        # Add the ball
-        self.add_puck()
-
-    def add_puck(self):
-        radius=10
-        mass=1
+    def add_puck(self, position=None, radius=10, mass=1, elasticity=0.95):
         inertia = pymunk.moment_for_circle(mass, 0, radius, (0,0))
-        ball_body = pymunk.Body(mass, inertia)
-        ball_body.position=(self.width/2,self.height/2)
+        puck_body = pymunk.Body(mass, inertia)
 
-        mainball = pymunk.Circle(ball_body, radius, (0,0))
-        mainball.elasticity = 0.95
-        self.space.add(ball_body, mainball)
-        self.pucks.append(mainball)
-        #ball_body.apply_impulse((40.0,0.0), (0,0))
+        if position:
+            puck_body.position = position
+        else:
+            puck_body.position = (self.width/2, self.height/2)
+
+        new_puck = pymunk.Circle(puck_body, radius, (0,0))
+        new_puck.elasticity = elasticity
+        self.space.add(puck_body, new_puck)
+
+        return new_puck
+
+    def remove_puck(self, puck):
+        self.space.remove(puck)
 
 class AirHockeyGame(AirHockeyTable):
 
@@ -76,6 +75,17 @@ class AirHockeyGame(AirHockeyTable):
 
         self.mouse_body = pymunk.Body()
         self.joint1=None
+
+        ## Balls
+        self.pucks = []
+
+        # Add the ball
+        main_puck = self.add_puck()
+        self.pucks.append(main_puck)
+
+    def remove_puck(self, puck):
+        super(AirHockeyGame, self).remove_puck(puck)
+        self.pucks.remove(puck)
 
     def add_player(self):
         pmass=3
@@ -143,19 +153,19 @@ class AirHockeyGame(AirHockeyTable):
         ### Draw 
         self.draw_table()
 
-        for ball in self.pucks:
-            p = self.to_pygame(ball.body.position)
+        for puck in self.pucks:
+            p = self.to_pygame(puck.body.position)
             #if p[0] < 0:
             #    score['p1'] += 1
             #if p[0] >self.width:
             #    score['p2'] += 1
 
             if p[0] < 0 or p[0]>self.width:
-                self.add_puck()
-                self.space.remove(ball)
-                self.pucks.remove(ball)
+                self.pucks.append(self.add_puck())
+                self.space.remove(puck)
+                self.pucks.remove(puck)
 
-            pygame.draw.circle(self.screen, THECOLORS["purple"], p, int(ball.radius), 0)
+            pygame.draw.circle(self.screen, THECOLORS["purple"], p, int(puck.radius), 0)
 
         p = self.to_pygame(self.p1_body.position)
         pygame.draw.circle(self.screen, THECOLORS["darkgreen"], p, int(self.p1_shape.radius), 0)

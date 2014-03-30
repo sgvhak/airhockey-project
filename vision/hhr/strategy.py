@@ -38,19 +38,17 @@ class TableSimPredictor(PuckPredictor):
         angle = math.atan2(del_y, del_x)
         speed = math.sqrt(del_x * del_x + del_y * del_y) / del_time 
 
-        puck = self.table.pucks[0]
-        puck.body.reset_forces()
-        puck.velocity = 0
+        puck = self.table.add_puck(position=self.curr_pos)
 
         impulse = speed * pymunk.Vec2d(1, 0).rotated(angle)
-
-        puck.body.position = self.curr_pos
         puck.body.apply_impulse(impulse)
-       
+
         future_pos = []
-        dt = 1/60.0/5.0
-        for t in range(5):
+        dt = 1.0/10.0
+        for t in range(15):
             self.table.space.step(dt)
             future_pos.append(tuple(puck.body.position))
         
+        self.table.remove_puck(puck)
+
         return future_pos
