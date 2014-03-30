@@ -111,6 +111,13 @@ class Vision(object):
                     coords, radius, thresh_mask = detect_circular_object(frame, hsv_min, hsv_max, (255,0,0))
                     pred.add_puck_event(cv2.getTickCount(), coords, radius)
 
+                    pred_path = pred.predicted_path()
+
+                    for path in zip(pred_path[:-1], pred_path[1:]):
+                        p1 = tuple([int(p) for p in path[0]])
+                        p2 = tuple([int(p) for p in path[1]])
+                        cv2.line(frame,p1,p2,(255,0,0),5)
+
                     mask = cv2.add(mask, thresh_mask)
 
             time_end = (cv2.getTickCount() - time_beg) / cv2.getTickFrequency()

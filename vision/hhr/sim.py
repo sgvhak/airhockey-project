@@ -187,9 +187,9 @@ class AirHockeyGame(AirHockeyTable):
         return frame
 
 if __name__ == "__main__":
-    ah = AirHockey()
+    ah = AirHockeyGame(640, 480)
 
     running = True
     while running:
-        running = ah.game_frame()
+        running = ah.process_frame()
     sys.exit(0)
