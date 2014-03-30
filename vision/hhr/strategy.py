@@ -5,48 +5,59 @@ import pymunk
 
 from .sim import AirHockeyTable
 from .interface import PuckPredictor
+from .calc import MovingAverage
+
+def calculate_speed_angle(pos1, pos2, time1, time2):
+    del_y = pos2[1] - pos1[1]
+    del_x = pos2[0] - pos1[0]
+    del_time = (time2 - time1) / cv2.getTickFrequency()
+
+    angle = math.atan2(del_y, del_x)
+    speed = math.sqrt(del_x * del_x + del_y * del_y) / del_time 
+
+    return speed, angle
 
 class TableSimPredictor(PuckPredictor):
 
-    def __init__(self, threshold, width, height, max_pos=10):
+    def __init__(self, threshold, width, height, avg_size=10):
         self.table = AirHockeyTable(width, height)
         self._threshold = threshold
-        self.max_pos = max_pos
 
-        # Prime with values
-        self.positions = [(0,0)]
-        self.times = [0]
+        # Store current posistion and time 
+        self.curr_pos = (0, 0)
+        self.curr_time = 0
+
+        # Calculate angles and speeds as we get them so we
+        # can keep a rolling sum 
+        self.angles = MovingAverage(avg_size)
+        self.speeds = MovingAverage(avg_size) 
 
     def threshold(self):
         return self._threshold
 
     def add_puck_event(self, tick, coords, radius):
-        if len(self.positions) == self.max_pos:
-            self.positions.pop(0)
-            self.times.pop(0)
 
-        self.positions.append(coords)
-        self.times.append(tick)
+        last_pos = self.curr_pos
+        last_time = self.curr_time
+
+        self.curr_pos = coords
+        self.curr_time = tick
+
+        speed, angle = calculate_speed_angle(last_pos, self.curr_pos, last_time, self.curr_time)
+
+        self.speeds.add_value(speed)
+        self.angles.add_value(angle)
 
     def predicted_path(self):
 
-        # Create an average speed and angle from last N positions and times
-        angle = 0
-        speed = 0
-        for pos_idx in range(1, len(self.positions)):
-            del_y = self.positions[pos_idx][1] - self.positions[pos_idx-1][1]
-            del_x = self.positions[pos_idx][0] - self.positions[pos_idx-1][0]
-            del_time = (self.times[pos_idx] - self.times[pos_idx-1]) / cv2.getTickFrequency()
-
-            angle += math.atan2(del_y, del_x)
-            speed += math.sqrt(del_x * del_x + del_y * del_y) / del_time 
-
-        angle /= len(self.positions)
-        speed /= len(self.times)
-
         # Add a puck to the space and apply a speed at the determined
         # angle
-        puck = self.table.add_puck(position=self.positions[-1])
+        puck = self.table.add_puck(position=self.curr_pos)
+
+        # Convert angle, speed averages tor regular floats, pymunk
+        # doesn't seem to like numpy floats
+        angle = float(self.angles.average)
+        speed = float(self.speeds.average)
 
         impulse = speed * pymunk.Vec2d(1, 0).rotated(angle)
         puck.body.apply_impulse(impulse)
