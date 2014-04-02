@@ -7,15 +7,18 @@ MalletHandleTop_r=16.25;
 
 kTable_w=100;
 
-MotorBracket();
-mirror([1,0,0]) translate([kTable_w,0,0]) MotorBracket();
-translate([0,400,0]) mirror([0,1,0]) IdlePulleyBracket();
-translate([0,400,0]) mirror([0,1,0]) mirror([1,0,0]) translate([kTable_w,0,0]) IdlePulleyBracket();
-translate([0,150,0]) Carage();
-translate([0,150,0]) mirror([1,0,0]) translate([kTable_w,0,0]) Carage();
+//MotorBracket();
+//mirror([1,0,0]) translate([kTable_w,0,0]) MotorBracket();
+//translate([0,400,0]) mirror([0,1,0]) IdlePulleyBracket();
+//translate([0,400,0]) mirror([0,1,0]) mirror([1,0,0]) translate([kTable_w,0,0]) IdlePulleyBracket();
+//translate([0,150,0]) Carage();
+//translate([0,150,0]) mirror([1,0,0]) translate([kTable_w,0,0]) Carage();
 
 
 rSetScrew8=1.8; // #8-32 threaded hole
+rScrew8Clear=2.2; // #8-32 clearance hole
+rScrew8Head=3.7;
+hScrew8Head=4.3;
 $fn=72;
 
 module BoltHole8(depth=12){
@@ -24,6 +27,12 @@ module BoltHole8(depth=12){
 		cylinder(r=rSetScrew8,h=depth,$fn=24);
 } // BoltHole8
 
+module BoltHeadHole8(inset=hScrew8Head,depth=12){
+
+	translate([0,0,-depth+0.05])
+		cylinder(r=rScrew8Clear,h=depth,$fn=24);
+	translate([0,0,-inset]) cylinder(r=rScrew8Head,h=inset+0.1,$fn=24);
+} // BoltHeadHole8
 kBoltCircle23_d=66.8;
 
 module Mema23Bolts(){
@@ -35,11 +44,16 @@ module Mema23Bolts(){
 
 //Mema23Bolts();
 
+kRod_r=3.2;
+
+
 kRodOffset_X=30;
-kSidePulleyCL=40;
+kSidePulleyCL=45;
+kPulley_d=70;
+kPulley_h=16;
 
 module Pulley(){
-  cylinder(r=35,h=13);
+  cylinder(r=kPulley_d/2,h=kPulley_h);
 } // Pulley
 
 module MotorBracket(){
@@ -49,7 +63,6 @@ module MotorBracket(){
 	kBracket_r=5;
 	kMBolt_r=3;
 	kMotorBoss_r=19.1;
-	kRod_r=3.2;
 
 	// mounting plate
 	difference(){
@@ -151,6 +164,70 @@ module IdlePulleyBracket(){
 	} // diff
 
 } // IdlePulleyBracket
+
+module IdlePulleyBracketS(){
+	// Surface mount version of idle pulley bracket
+
+	kBracket_L=75;
+	kBracket_H=50;
+	kBracket_w=70;
+	kBracket_r=5;
+	kMBolt_r=3;
+	kMotorBoss_r=12.72;
+	kRod_r=3.2;
+	
+	kMountBoltInset=kBracket_r+2;
+
+	// motor mount
+	difference(){
+		
+		hull(){
+			//translate([0,0,-10]) cube([1,kBracket_L,10]);
+			translate([kBracket_r,kBracket_L-kBracket_r,-10])
+				cylinder(r=kBracket_r,h=10);
+			translate([kBracket_r,kBracket_r,-10])
+				cylinder(r=kBracket_r,h=10);
+			translate([kBracket_w-kBracket_r,kBracket_r,-10])
+				cylinder(r=kBracket_r,h=10);
+			translate([kBracket_w-kBracket_r,kBracket_L-kBracket_r,-10])
+				cylinder(r=kBracket_r,h=10);
+
+		} // hull
+
+		translate([kSidePulleyCL,15,0])
+			BoltHole8();
+
+	// mounting bolts
+			translate([kMountBoltInset,kBracket_L-kMountBoltInset,0])
+				BoltHeadHole8();
+			translate([kMountBoltInset,kMountBoltInset,0])
+				BoltHeadHole8();
+			translate([kBracket_w-kMountBoltInset,kMountBoltInset,0])
+				BoltHeadHole8();
+			translate([kBracket_w-kMountBoltInset,kBracket_L-kMountBoltInset,0])
+				BoltHeadHole8();
+	} // diff
+
+	
+
+	
+	// rod mount
+	difference(){
+		translate([kRodOffset_X,kBracket_L,kRod_r]) rotate([90,0,0])
+			hull(){
+				cylinder(r=kRod_r+3,h=20);
+				translate([0,-kRod_r,0]) cylinder(r=kRod_r+3,h=20);
+			} // hull
+
+		translate([kRodOffset_X,kBracket_L+0.05,kRod_r]) rotate([90,0,0])
+			cylinder(r=kRod_r,h=15.5);
+	} // diff
+
+} // IdlePulleyBracketS
+
+//IdlePulleyBracketS();
+mirror([1,0,0]) IdlePulleyBracketS();
+//translate([kSidePulleyCL,15,3]) color("Red") Pulley();
 
 module Carage(){
 	kBracket_L=80;
