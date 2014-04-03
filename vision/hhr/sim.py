@@ -25,19 +25,19 @@ class AirHockeyTable(object):
         # Goal width
         self.gw = self.width/4.0
 
-        ### walls
+        ### Walls
         static_body = pymunk.Body()
-        self.static_lines = [pymunk.Segment(static_body, (self.wt, self.wt), (self.width-self.wt, self.wt), 1.0),
-                             pymunk.Segment(static_body, (self.wt, self.height-self.wt), (self.width-self.wt, self.height-self.wt), 1.0),
-                             pymunk.Segment(static_body, (self.wt, self.wt), (self.wt, (self.height-self.gw)/2), 1.0),
-                             pymunk.Segment(static_body, (self.wt, (self.height+self.gw)/2), (self.wt, self.height-self.wt), 1.0),
-                             pymunk.Segment(static_body, (self.width-self.wt, self.wt), ((self.width-self.wt), (self.height-self.gw)/2), 1.0),
-                             pymunk.Segment(static_body, (self.width-self.wt, (self.height+self.gw)/2), (self.width-self.wt, self.height-self.wt), 1.0)
-                             ]  
-        for line in self.static_lines:
+        self.walls = [pymunk.Segment(static_body, (self.wt, self.wt), (self.width-self.wt, self.wt), 1.0),
+                      pymunk.Segment(static_body, (self.wt, self.height-self.wt), (self.width-self.wt, self.height-self.wt), 1.0),
+                      pymunk.Segment(static_body, (self.wt, self.wt), (self.wt, (self.height-self.gw)/2), 1.0),
+                      pymunk.Segment(static_body, (self.wt, (self.height+self.gw)/2), (self.wt, self.height-self.wt), 1.0),
+                      pymunk.Segment(static_body, (self.width-self.wt, self.wt), ((self.width-self.wt), (self.height-self.gw)/2), 1.0),
+                      pymunk.Segment(static_body, (self.width-self.wt, (self.height+self.gw)/2), (self.width-self.wt, self.height-self.wt), 1.0)
+                      ]  
+        for line in self.walls:
             line.elasticity = 0.7
             line.group = 1
-        self.space.add(self.static_lines)
+        self.space.add(self.walls)
 
     def add_puck(self, position=None, radius=10, mass=1, elasticity=0.95):
         inertia = pymunk.moment_for_circle(mass, 0, radius, (0,0))
@@ -112,7 +112,7 @@ class AirHockeyGame(AirHockeyTable):
         pygame.draw.circle(self.screen, THECOLORS["grey"], (self.width/2, self.height/2), int(circrad), 2)
         pygame.draw.arc(self.screen, THECOLORS["grey"], [[-circrad, self.height/2-circrad], [+circrad,self.height/2+circrad]], 270, 90, 2)
 
-        for line in self.static_lines:
+        for line in self.walls:
             body = line.body
             pv1 = body.position + line.a.rotated(body.angle)
             pv2 = body.position + line.b.rotated(body.angle)

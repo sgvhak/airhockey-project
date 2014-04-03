@@ -118,6 +118,12 @@ class Vision(object):
                         p2 = tuple([int(p) for p in path[1]])
                         cv2.line(frame,p1,p2,(255,0,0),5)
 
+                    # Draw simulated universe walls
+                    for line in pred.table.walls:
+                        linea = tuple([int(a) for a in line.a])
+                        lineb = tuple([int(b) for b in line.b])
+                        cv2.rectangle(frame, linea, lineb, (255,0,0))
+
                     mask = cv2.add(mask, thresh_mask)
 
             time_end = (cv2.getTickCount() - time_beg) / cv2.getTickFrequency()
