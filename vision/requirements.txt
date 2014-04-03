@@ -1,0 +1,3 @@
+numpy>=1.7.1
+pymunk>=4.0.0
+pygame>=1.9.1

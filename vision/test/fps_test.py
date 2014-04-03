@@ -6,10 +6,14 @@ import cv2
 import numpy as np
 
 VIDEO_SOURCE = len(sys.argv) > 1 and int(sys.argv[1]) or 0
+VIDEO_WIDTH = 640
+VIDEO_HEIGHT = 480
 NUM_TIME_RECORDS = 5
 VID_WIN_NAME = 'Video'
 
 cap = cv2.VideoCapture(VIDEO_SOURCE)
+cap.set(cv2.cv.CV_CAP_PROP_FRAME_WIDTH, VIDEO_WIDTH)
+cap.set(cv2.cv.CV_CAP_PROP_FRAME_HEIGHT, VIDEO_HEIGHT)
 
 time_records = np.zeros(NUM_TIME_RECORDS, float)
 time_rec_idx = 0
