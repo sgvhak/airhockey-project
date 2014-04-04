@@ -5,6 +5,7 @@ import numpy as np
 from .interface import CaptureSource
 from .sim import AirHockeyGame
 from .gui import VID_WIN_NAME, OUT_WIN_NAME
+from .calc import MovingAverage
 
 # How many time values to save for averaging for calculating FPS
 NUM_TIME_RECORDS = 5
@@ -92,9 +93,7 @@ class Vision(object):
         self.predictors = predictors
 
     def capture_loop(self):
-        time_records = np.zeros(NUM_TIME_RECORDS, float)
-        time_rec_idx = 0
-        time_total = 0
+        time_avg = MovingAverage(NUM_TIME_RECORDS)
         while(True):
             time_beg = cv2.getTickCount()
 
@@ -117,18 +116,10 @@ class Vision(object):
                     mask = cv2.add(mask, thresh_mask)
 
             time_end = (cv2.getTickCount() - time_beg) / cv2.getTickFrequency()
-
-            # Record time value in a rolling sum where the oldest falls off
-            # This way we can smooth out the FPS value
-            oldest_val = time_records[time_rec_idx]
-            if oldest_val > 0:
-                time_total -= oldest_val 
-            time_total += time_end 
-            time_records[time_rec_idx] = time_end
-            time_rec_idx = (time_rec_idx + 1) % NUM_TIME_RECORDS
+            time_avg.add_value(time_end)
 
             # Write FPS to frame
-            cv2.putText(frame, '%2.2f FPS' % (NUM_TIME_RECORDS / time_total), (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (0,0,255))
+            cv2.putText(frame, '%2.2f FPS' % (1/time_avg.average), (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (0,0,255))
 
             # Draw the original frame and our debugging frame in different windows
             cv2.imshow(VID_WIN_NAME, frame)

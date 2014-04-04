@@ -17,6 +17,13 @@ class MovingAverage(object):
         self._counter = (self._counter + 1) % self._values.shape[0]
 
     @property
+    def total(self):
+        if self._num_values == 0:
+            return 0
+        else:
+            return self._total
+
+    @property
     def average(self):
         if self._num_values == 0:
             return 0
