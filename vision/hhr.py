@@ -5,7 +5,7 @@ import sys
 from ConfigParser import ConfigParser
 import argparse
 
-from hhr import gui, vision, strategy
+from hhr import gui, vision, strategy, control
 
 # Default values for command line arguments
 DFLT_CAPTURE_SOURCE = 0
@@ -40,14 +40,16 @@ def main():
     predictors = map(lambda t: strategy.TableSimPredictor(t, args.capture_width, args.capture_height), thresholds)
 
     source = None
+    controller = None
     if type(args.capture_source) is int or args.capture_source.isdigit():
         source = vision.CV2CaptureSource(int(args.capture_source), args.capture_width, args.capture_height)
     elif args.capture_source.lower() == "sim":
         source = vision.SimulatedCaptureSource(args.capture_width, args.capture_height)
+        controller = control.SimGameController(source.game, 250)
     else:
         parser.error("Unknown capture source: %s" % args.capture_source)
 
-    vis = vision.Vision(source, predictors)
+    vis = vision.Vision(source, predictors, controller)
 
     try:
         vis.capture_loop()

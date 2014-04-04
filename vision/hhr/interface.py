@@ -64,3 +64,15 @@ class PuckPredictor(object):
         'Draws prediction values and simulation bounds on an OpenCV frame'
 
         return
+
+class RobotController(object):
+    'Uses predicted paths to control some part of the robot'
+
+    __metaclass__ = ABCMeta
+
+    @abstractmethod
+    def use_prediction(self, pred_path):
+        'Does something with the predicted path to command a robot of some sort'
+
+        return
+

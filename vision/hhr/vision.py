@@ -76,11 +76,11 @@ class CV2CaptureSource(CaptureSource):
 
 class SimulatedCaptureSource(CaptureSource):
     def __init__(self, width, height):
-        self.sim = AirHockeyGame(width, height)
+        self.game = AirHockeyGame(width, height)
 
     def frame(self):
-        self.sim.process_frame()
-        frame = self.sim.get_frame()
+        self.game.process_frame()
+        frame = self.game.get_frame()
         frame = cv2.cvtColor(frame, cv2.COLOR_RGB2BGR);
         return frame
 
@@ -88,9 +88,10 @@ class SimulatedCaptureSource(CaptureSource):
         pass
 
 class Vision(object):
-    def __init__(self, source, predictors):
+    def __init__(self, source, predictors, controller):
         self.source = source
         self.predictors = predictors
+        self.controller = controller
 
     def capture_loop(self):
         time_avg = MovingAverage(NUM_TIME_RECORDS)
@@ -112,6 +113,9 @@ class Vision(object):
 
                     pred_path = pred.predicted_path()
                     pred.draw(frame)
+
+                    if self.controller:
+                        self.controller.use_prediction(pred_path)
 
                     mask = cv2.add(mask, thresh_mask)
 
