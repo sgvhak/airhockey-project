@@ -58,3 +58,9 @@ class PuckPredictor(object):
         'Returns a location of where the puck will be in the future given recent events'
 
         return
+
+    @abstractmethod
+    def draw(self, frame):
+        'Draws prediction values and simulation bounds on an OpenCV frame'
+
+        return

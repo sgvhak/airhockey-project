@@ -27,6 +27,9 @@ class TableSimPredictor(PuckPredictor):
         self.curr_pos = (0, 0)
         self.curr_time = 0
 
+        # Cache predicted path for draw
+        self.pred_path = []
+
         # Calculate angles and speeds as we get them so we
         # can keep a rolling sum 
         self.angles = MovingAverage(avg_size)
@@ -72,4 +75,21 @@ class TableSimPredictor(PuckPredictor):
         # Remove the puck once the simulation is over
         self.table.remove_puck(puck)
 
+        self.pred_path = future_pos
+
         return future_pos
+
+    def draw(self, frame):
+        'Draws table and puck future posistions using last predicted paths'
+
+        for path in zip(self.pred_path[:-1], self.pred_path[1:]):
+            p1 = tuple([int(p) for p in path[0]])
+            p2 = tuple([int(p) for p in path[1]])
+            cv2.line(frame,p1,p2,(255,0,0),5)
+
+        # Draw simulated universe walls
+        for line in self.table.walls:
+            linea = tuple([int(a) for a in line.a])
+            lineb = tuple([int(b) for b in line.b])
+            cv2.rectangle(frame, linea, lineb, (255,0,0))
+
