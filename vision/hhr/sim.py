@@ -9,6 +9,10 @@ from pymunk import Vec2d
 import math, sys, random
 import numpy as np
 
+# For a table of 46" x 26" with table covering frame and a capture size of 320 x 240
+# Table would be 320 px x 160 px
+# ~7 px per in
+
 class AirHockeyTable(object):
 
     def __init__(self, width, height):
@@ -19,27 +23,38 @@ class AirHockeyTable(object):
         self.space = pymunk.Space(50)
         self.space.gravity = (0.0,0.0)
 
-        # Wall thickness
-        self.wt = 5.0
+        # Wall thickness 1"
+        self.wt = 7
+
+        self.offset = Vec2d(0, self.height / 6)
+        self.table_height = int(self.height / 1.5)
+        self.table_width = self.width
 
         # Goal width
-        self.gw = self.width/4.0
+        self.gw = 40 
 
         ### Walls
         static_body = pymunk.Body()
-        self.walls = [pymunk.Segment(static_body, (self.wt, self.wt), (self.width-self.wt, self.wt), 1.0),
-                      pymunk.Segment(static_body, (self.wt, self.height-self.wt), (self.width-self.wt, self.height-self.wt), 1.0),
-                      pymunk.Segment(static_body, (self.wt, self.wt), (self.wt, (self.height-self.gw)/2), 1.0),
-                      pymunk.Segment(static_body, (self.wt, (self.height+self.gw)/2), (self.wt, self.height-self.wt), 1.0),
-                      pymunk.Segment(static_body, (self.width-self.wt, self.wt), ((self.width-self.wt), (self.height-self.gw)/2), 1.0),
-                      pymunk.Segment(static_body, (self.width-self.wt, (self.height+self.gw)/2), (self.width-self.wt, self.height-self.wt), 1.0)
+            
+        self.walls = [pymunk.Segment(static_body, Vec2d(self.wt, self.wt) + self.offset, 
+                                                  Vec2d(self.table_width-self.wt, self.wt) + self.offset, 1.0),
+                      pymunk.Segment(static_body, Vec2d(self.wt, self.table_height-self.wt) + self.offset, 
+                                                  Vec2d(self.table_width-self.wt, self.table_height-self.wt) + self.offset, 1.0),
+                      pymunk.Segment(static_body, Vec2d(self.wt, self.wt) + self.offset, 
+                                                  Vec2d(self.wt, (self.table_height-self.gw)/2) + self.offset, 1.0),
+                      pymunk.Segment(static_body, Vec2d(self.wt, (self.table_height+self.gw)/2) + self.offset, 
+                                                  Vec2d(self.wt, self.table_height-self.wt) + self.offset, 1.0),
+                      pymunk.Segment(static_body, Vec2d(self.table_width-self.wt, self.wt) + self.offset, 
+                                                  Vec2d(self.table_width-self.wt, (self.table_height-self.gw)/2) + self.offset, 1.0),
+                      pymunk.Segment(static_body, Vec2d(self.table_width-self.wt, (self.table_height+self.gw)/2) + self.offset, 
+                                                  Vec2d(self.table_width-self.wt, self.table_height-self.wt) + self.offset, 1.0),
                       ]  
         for line in self.walls:
             line.elasticity = 0.7
             line.group = 1
         self.space.add(self.walls)
 
-    def add_puck(self, position=None, radius=10, mass=1, elasticity=0.95):
+    def add_puck(self, position=None, radius=9, mass=1, elasticity=0.95):
         inertia = pymunk.moment_for_circle(mass, 0, radius, (0,0))
         puck_body = pymunk.Body(mass, inertia)
 
@@ -80,8 +95,11 @@ class AirHockeyGame(AirHockeyTable):
         self.pucks = []
 
         # Add the ball
-        main_puck = self.add_puck()
-        self.pucks.append(main_puck)
+        self.add_puck()
+
+    def add_puck(self):
+        puck = super(AirHockeyGame, self).add_puck()
+        self.pucks.append(puck)
 
     def remove_puck(self, puck):
         super(AirHockeyGame, self).remove_puck(puck)
@@ -89,7 +107,7 @@ class AirHockeyGame(AirHockeyTable):
 
     def add_player(self):
         pmass=3
-        pradius=20
+        pradius=11
         p1inertia = pymunk.moment_for_circle(pmass, 0, pradius, (0,0))
         self.p1_body = pymunk.Body(pmass, p1inertia)
         self.p1_body.position=(self.width-self.width/8, self.height/2)
@@ -100,26 +118,25 @@ class AirHockeyGame(AirHockeyTable):
         self.players.append(self.p1_shape)
 
     def draw_table(self):
-        pygame.draw.rect(self.screen, THECOLORS["brown"], [[0.0, 0.0], [self.width, self.wt]], 0)
-        pygame.draw.rect(self.screen, THECOLORS["brown"], [[0.0, self.height-self.wt], [self.width, self.height]], 0)
-        pygame.draw.rect(self.screen, THECOLORS["brown"], [[0.0, 0.0], [self.wt, (self.height-self.gw)/2]], 0)
-        pygame.draw.rect(self.screen, THECOLORS["brown"], [[0.0, (self.height+self.gw)/2], [self.wt,self.height]], 0)
-        pygame.draw.rect(self.screen, THECOLORS["brown"], [[self.width-self.wt, 0.0], [self.width, (self.height-self.gw)/2]], 0)
-        pygame.draw.rect(self.screen, THECOLORS["brown"], [[self.width-self.wt, (self.height+self.gw)/2], [self.width,self.height]], 0)
+        # Draw table by drawing two brown rectangles outside of goal bounds, then a whole one over the playing surface
+        pygame.draw.rect(self.screen, THECOLORS["brown"], Rect(self.offset, (self.table_width, self.table_height/2-self.gw/2)), 0)
+        pygame.draw.rect(self.screen, THECOLORS["brown"], Rect(self.offset+Vec2d(0, self.table_height/2+self.gw/2), (self.table_width, self.table_height/2-self.gw/2)), 0)
+        pygame.draw.rect(self.screen, THECOLORS["white"], Rect(self.offset+self.wt, (self.table_width-self.wt*2, self.table_height-self.wt*2)), 0)
 
-        pygame.draw.line(self.screen, THECOLORS["grey"], (self.width/2, self.wt), (self.width/2, self.height-self.wt), 2)
+        # Draw center line and starting posistion circle
+        pygame.draw.line(self.screen, THECOLORS["grey"], Vec2d(self.table_width/2, self.wt) + self.offset, (self.table_width/2, self.table_height-self.wt) + self.offset, 2)
         circrad=1.2*self.gw/2
         pygame.draw.circle(self.screen, THECOLORS["grey"], (self.width/2, self.height/2), int(circrad), 2)
         pygame.draw.arc(self.screen, THECOLORS["grey"], [[-circrad, self.height/2-circrad], [+circrad,self.height/2+circrad]], 270, 90, 2)
 
+        # Draw where pymunk puts walls
         for line in self.walls:
-            body = line.body
-            pv1 = body.position + line.a.rotated(body.angle)
-            pv2 = body.position + line.b.rotated(body.angle)
+            pv1 = line.body.position + line.a.rotated(line.body.angle)
+            pv2 = line.body.position + line.b.rotated(line.body.angle)
             p1 = self.to_pygame(pv1)
             p2 = self.to_pygame(pv2)
             pygame.draw.lines(self.screen, THECOLORS["black"], False, [p1,p2])
- 
+            
     def process_frame(self):
         running = True
 
@@ -148,24 +165,19 @@ class AirHockeyGame(AirHockeyTable):
         self.p1_body.angular_velocity=0
       
         ### Clear screen
-        self.screen.fill(THECOLORS["white"])
+        self.screen.fill(THECOLORS["black"])
         
         ### Draw 
         self.draw_table()
 
         for puck in self.pucks:
             p = self.to_pygame(puck.body.position)
-            #if p[0] < 0:
-            #    score['p1'] += 1
-            #if p[0] >self.width:
-            #    score['p2'] += 1
 
             if p[0] < 0 or p[0]>self.width:
-                self.pucks.append(self.add_puck())
-                self.space.remove(puck)
-                self.pucks.remove(puck)
+                self.remove_puck(puck)
+                self.add_puck()
 
-            pygame.draw.circle(self.screen, THECOLORS["purple"], p, int(puck.radius), 0)
+            pygame.draw.circle(self.screen, THECOLORS["red"], p, int(puck.radius), 0)
 
         p = self.to_pygame(self.p1_body.position)
         pygame.draw.circle(self.screen, THECOLORS["darkgreen"], p, int(self.p1_shape.radius), 0)
@@ -197,7 +209,7 @@ class AirHockeyGame(AirHockeyTable):
         return frame
 
 if __name__ == "__main__":
-    ah = AirHockeyGame(640, 480)
+    ah = AirHockeyGame(320, 240)
 
     running = True
     while running:
