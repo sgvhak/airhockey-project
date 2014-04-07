@@ -1,3 +1,13 @@
+// ****************************************************************
+//
+//  2D Belt driven gantry for Air-Hockey playing robot
+//
+//  by Dave Flynn
+//
+// ****************************************************************
+
+include <CommonStuff.scad>;
+include <cogsndogs.scad>;
 
 //Mallet dimentions
 Mallet_d=74;
@@ -18,7 +28,9 @@ kBracket_r=5;
 
 //rotate([0,180,0]) mirror([1,0,0]) MotorBracketS();  // left motor bracket
 
-rotate([0,180,0]) Carage(); // Y carrage Print 2
+//rotate([0,180,0]) Carage(); // Y carrage Print 2
+
+XCarrage(); // X carrage print 1
 
 // *********************************
 //MotorBracketS();
@@ -357,6 +369,7 @@ module BackIdleRoller(){
 kRod_r=3.2;
 kBushing_L=7;
 kRodBearing_r=4.8;
+kRodInset=30;
 
 module Carage(){
 	kBracket_L=kYCarrage_L;
@@ -366,7 +379,7 @@ module Carage(){
 	kMBolt_r=3;
 	kDeckBot=kBeltCL+8;
 	
-	kRodInset=30;
+	
 	kXRod_Z=13;
 	kXRod_X=10;
 
@@ -409,6 +422,51 @@ module Carage(){
 
 	//translate([0,kBracket_L-kRodInset,kXRod_Z]) rotate([0,0,90]) RodBearing(HH=kDeckBot);
 } // Carage
+
+module XCarrage(){
+	kXRod_Z=13;
+	kBracket_L=kYCarrage_L;
+	kBase_Y=55;
+	kDeckBot=kBeltCL+5;
+	kXCarrage_X=60;
+	kMountPlate_h=10;
+	kBracket_w=50;
+
+	// mounting plate
+	difference(){
+		translate([0,kBracket_L/2-kBase_Y/2,-10])
+		hull(){
+			translate([kBracket_r,kBracket_r,0])
+				cylinder(r=kBracket_r,h=kMountPlate_h);
+			translate([kBracket_r,kBase_Y-kBracket_r,0])
+				cylinder(r=kBracket_r,h=kMountPlate_h);
+			translate([kXCarrage_X-kBracket_r,kBracket_r,0])
+				cylinder(r=kBracket_r,h=kMountPlate_h);
+			translate([kXCarrage_X-kBracket_r,kBase_Y-kBracket_r,0])
+				cylinder(r=kBracket_r,h=kMountPlate_h);
+
+		} // hull
+		
+		translate([kXCarrage_X/2,kBracket_L/2,-10]) for (j = [0:5]) { rotate([0,0,j*60]) translate([20,0,0])
+			rotate([180,0,0]) BoltHole();}
+	} // diff
+
+	//Belt Mount
+	translate([9,kBracket_L/2+kBase_Y/2-6-7.5,-0.05]) cube([kXCarrage_X-18,4,17]);
+	translate([8,kBracket_L/2+kBase_Y/2-6-7.5,-0.05]) cube([kXCarrage_X-14,13,5]);
+	translate([kXCarrage_X/2-0.1,kBracket_L/2+kBase_Y/2-7.5,4]) rotate([0,0,180]) 
+		dog_linear(T5, 4, 13, 5); //profile, teeth, height, t_dog
+	translate([kXCarrage_X/2+0.1,kBracket_L/2+kBase_Y/2-7.5,4]) mirror([1,0,0]) rotate([0,0,180]) 
+		dog_linear(T5, 4, 13, 5); //profile, teeth, height, t_dog
+
+	// Rod bearings
+	translate([0,kBracket_L-kRodInset,kXRod_Z]) rotate([0,0,-90]) RodBearing(HH=kDeckBot);
+	translate([0,kRodInset,kXRod_Z]) rotate([0,0,-90]) RodBearing(HH=kDeckBot);
+	translate([kXCarrage_X,kBracket_L-kRodInset,kXRod_Z]) rotate([0,0,90]) RodBearing(HH=kDeckBot);
+	translate([kXCarrage_X,kRodInset,kXRod_Z]) rotate([0,0,90]) RodBearing(HH=kDeckBot);
+} // XCarrage
+
+//translate([-82,0,0]) XCarrage();
 
 module RodBearing(HH=8,Depth=kBushing_L){
 	difference(){
