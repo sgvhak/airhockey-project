@@ -6,10 +6,10 @@ class SimGameController(RobotController):
     def __init__(self, game, x_pos):
         self.game = game
         self.x_pos = x_pos
-        #self.game.add_player()
+        self.control_player = self.game.add_player()
 
     def use_prediction(self, pred_path):
-        paddle = self.game.players[0].body
+        paddle = self.control_player.body
 
         for point in pred_path:
             if point[0] > self.x_pos:

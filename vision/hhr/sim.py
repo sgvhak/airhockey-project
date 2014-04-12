@@ -109,13 +109,14 @@ class AirHockeyGame(AirHockeyTable):
         pmass=3
         pradius=11
         p1inertia = pymunk.moment_for_circle(pmass, 0, pradius, (0,0))
-        self.p1_body = pymunk.Body(pmass, p1inertia)
-        self.p1_body.position=(self.width-self.width/8, self.height/2)
+        player_body = pymunk.Body(pmass, p1inertia)
+        player_body.position=(self.width-self.width/8, self.height/2)
 
-        self.p1_shape = pymunk.Circle(self.p1_body, pradius, (0,0))
-        self.p1_shape.elasticity = 0.95
-        self.space.add(self.p1_body, self.p1_shape)
-        self.players.append(self.p1_shape)
+        player_shape = pymunk.Circle(player_body, pradius, (0,0))
+        player_shape.elasticity = 0.95
+        self.space.add(player_body, player_shape)
+        self.players.append(player_shape)
+        return player_shape
 
     def draw_table(self):
         # Draw table by drawing two brown rectangles outside of goal bounds, then a whole one over the playing surface
@@ -153,16 +154,15 @@ class AirHockeyGame(AirHockeyTable):
             elif event.type == MOUSEBUTTONDOWN and event.button == 1: # LMB
                 #selected = space.point_query_first(self.from_pygame(Vec2d(mpos)))
                 #if selected != None:
-                self.p1_body.position = self.mouse_body.position
-                self.joint1 = pymunk.PivotJoint(self.mouse_body, self.p1_body, (0,0), (0,0) )
+                p1_body = self.players[0].body
+                p1_body.position = self.mouse_body.position
+                self.joint1 = pymunk.PivotJoint(self.mouse_body, p1_body, (0,0), (0,0) )
                 self.space.add(self.joint1)
 
             elif event.type == MOUSEBUTTONUP:
                 if self.joint1 != None:
                     self.space.remove(self.joint1)
                 self.joint1 = None
-        
-        self.p1_body.angular_velocity=0
       
         ### Clear screen
         self.screen.fill(THECOLORS["black"])
@@ -179,10 +179,13 @@ class AirHockeyGame(AirHockeyTable):
 
             pygame.draw.circle(self.screen, THECOLORS["red"], p, int(puck.radius), 0)
 
-        p = self.to_pygame(self.p1_body.position)
-        pygame.draw.circle(self.screen, THECOLORS["darkgreen"], p, int(self.p1_shape.radius), 0)
-        pygame.draw.circle(self.screen, THECOLORS["black"], p, int(self.p1_shape.radius+1), 2)
-        pygame.draw.circle(self.screen, THECOLORS["black"], p, int(self.p1_shape.radius/2), 1)
+        for p_shape in self.players:
+            p_body = p_shape.body
+            p_body.angular_velocity = 0
+            p = self.to_pygame(p_body.position)
+            pygame.draw.circle(self.screen, THECOLORS["darkgreen"], p, int(p_shape.radius), 0)
+            pygame.draw.circle(self.screen, THECOLORS["black"], p, int(p_shape.radius+1), 2)
+            pygame.draw.circle(self.screen, THECOLORS["black"], p, int(p_shape.radius/2), 1)
 
         ### Update physics
         dt = 1.0/60.0/5.
