@@ -19,9 +19,10 @@ def calculate_speed_angle(pos1, pos2, time1, time2):
 
 class TableSimPredictor(PuckPredictor):
 
-    def __init__(self, threshold, width, height, avg_size=10):
+    def __init__(self, threshold, width, height, num_steps=10, avg_size=10):
         self.table = AirHockeyTable(width, height)
         self._threshold = threshold
+        self.num_steps = num_steps
 
         # Store current posistion and time 
         self.curr_pos = (0, 0)
@@ -67,17 +68,19 @@ class TableSimPredictor(PuckPredictor):
 
         # Simulate several steps into the future
         future_pos = []
-        dt = 1.0/10.0
-        for t in range(15):
+        future_vel = []
+        dt = 1.0/self.num_steps
+        for t in range(self.num_steps):
             self.table.space.step(dt)
             future_pos.append(tuple(puck.body.position))
+            future_vel.append(tuple(puck.body.velocity)) 
         
         # Remove the puck once the simulation is over
         self.table.remove_puck(puck)
 
         self.pred_path = future_pos
 
-        return future_pos
+        return future_pos, future_vel
 
     def draw(self, frame):
         'Draws table and puck future posistions using last predicted paths'

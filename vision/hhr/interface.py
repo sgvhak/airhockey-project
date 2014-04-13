@@ -71,7 +71,7 @@ class RobotController(object):
     __metaclass__ = ABCMeta
 
     @abstractmethod
-    def use_prediction(self, pred_path):
+    def use_prediction(self, pred_path, pred_vel):
         'Does something with the predicted path to command a robot of some sort'
 
         return

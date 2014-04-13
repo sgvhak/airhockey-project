@@ -8,7 +8,7 @@ class SimGameController(RobotController):
         self.x_pos = x_pos
         self.control_player = self.game.add_player()
 
-    def use_prediction(self, pred_path):
+    def use_prediction(self, pred_path, pred_vel):
         paddle = self.control_player.body
 
         for point in pred_path:
