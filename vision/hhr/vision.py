@@ -111,11 +111,11 @@ class Vision(object):
                     coords, radius, thresh_mask = detect_circular_object(frame, hsv_min, hsv_max, (255,0,0))
                     pred.add_puck_event(cv2.getTickCount(), coords, radius)
 
-                    pred_path, pred_vel = pred.predicted_path()
+                    i_point = pred.intercept_point()
                     pred.draw(frame)
 
                     if self.controller:
-                        self.controller.use_prediction(pred_path, pred_vel)
+                        self.controller.move_to(i_point)
 
                     mask = cv2.add(mask, thresh_mask)
 

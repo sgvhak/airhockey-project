@@ -54,8 +54,8 @@ class PuckPredictor(object):
         return
 
     @abstractmethod
-    def predicted_path(self):
-        'Returns a location of where the puck will be in the future given recent events'
+    def intercept_point(self):
+        'Returns the location the paddle should go to intercept the puck'
 
         return
 
@@ -71,8 +71,8 @@ class RobotController(object):
     __metaclass__ = ABCMeta
 
     @abstractmethod
-    def use_prediction(self, pred_path, pred_vel):
-        'Does something with the predicted path to command a robot of some sort'
+    def move_to(self, intercept_point):
+        'Move paddle to interception point'
 
         return
 

@@ -3,15 +3,12 @@ from pymunk import Vec2d
 
 class SimGameController(RobotController):
 
-    def __init__(self, game, x_pos):
+    def __init__(self, game):
         self.game = game
-        self.x_pos = x_pos
         self.control_player = self.game.add_player()
 
-    def use_prediction(self, pred_path, pred_vel):
+    def move_to(self, intercept_point):
         paddle = self.control_player.body
 
-        for point in pred_path:
-            if point[0] > self.x_pos:
-                paddle.position = self.game.to_pygame(Vec2d(self.x_pos+10, point[1]))
-                break
+        if intercept_point:
+            paddle.position = self.game.to_pygame(Vec2d(intercept_point))

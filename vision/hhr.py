@@ -45,7 +45,7 @@ def main():
         source = vision.CV2CaptureSource(int(args.capture_source), args.capture_width, args.capture_height)
     elif args.capture_source.lower() == "sim":
         source = vision.SimulatedCaptureSource(args.capture_width, args.capture_height)
-        controller = control.SimGameController(source.game, 250)
+        controller = control.SimGameController(source.game)
     else:
         parser.error("Unknown capture source: %s" % args.capture_source)
 

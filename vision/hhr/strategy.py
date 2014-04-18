@@ -19,7 +19,7 @@ def calculate_speed_angle(pos1, pos2, time1, time2):
 
 class TableSimPredictor(PuckPredictor):
 
-    def __init__(self, threshold, width, height, num_steps=10, avg_size=10):
+    def __init__(self, threshold, width, height, num_steps=10, avg_size=10, defense_radius=40):
         self.table = AirHockeyTable(width, height)
         self._threshold = threshold
         self.num_steps = num_steps
@@ -35,6 +35,13 @@ class TableSimPredictor(PuckPredictor):
         # can keep a rolling sum 
         self.angles = MovingAverage(avg_size)
         self.speeds = MovingAverage(avg_size) 
+
+        # Create defense circle located at center of right most goal
+        d_body = pymunk.Body(pymunk.inf, pymunk.inf)
+        #d_body = pymunk.Body()
+        d_body.position = self.table.width, self.table.height / 2
+        self.defense_circle = pymunk.Circle(d_body, defense_radius)
+        self.table.space.add(d_body, self.defense_circle)
 
     def threshold(self):
         return self._threshold
@@ -79,12 +86,26 @@ class TableSimPredictor(PuckPredictor):
         self.table.remove_puck(puck)
 
         self.pred_path = future_pos
+        self.pred_vel = future_vel
 
         return future_pos, future_vel
 
-    def draw(self, frame):
-        'Draws table and puck future posistions using last predicted paths'
+    def intercept_point(self):
+        future_pos, future_vel = self.predicted_path()
 
+        i_point = None
+        for path in zip(future_pos[:-1], future_pos[1:]):
+            query_info = self.defense_circle.segment_query(path[0], path[1])
+            if query_info:
+                i_point = query_info.get_hit_point()
+                break
+
+        return i_point
+
+    def draw(self, frame):
+        'Draws table and puck future positions using last predicted paths'
+
+        # Draw predicted path
         for path in zip(self.pred_path[:-1], self.pred_path[1:]):
             p1 = tuple([int(p) for p in path[0]])
             p2 = tuple([int(p) for p in path[1]])
@@ -96,3 +117,6 @@ class TableSimPredictor(PuckPredictor):
             lineb = tuple([int(b) for b in line.b])
             cv2.rectangle(frame, linea, lineb, (255,0,0))
 
+        # Draw defense circle
+        pos = tuple([ int(p) for p in self.defense_circle.body.position ])
+        cv2.circle(frame, pos, int(self.defense_circle.radius), (255, 0, 0), 2)
