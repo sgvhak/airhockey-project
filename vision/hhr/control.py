@@ -5,7 +5,7 @@ class SimGameController(RobotController):
 
     def __init__(self, game):
         self.game = game
-        self.control_player = self.game.add_player()
+        self.control_player = self.game.add_player(mass=1e10)
 
     def move_to(self, intercept_point):
         paddle = self.control_player.body

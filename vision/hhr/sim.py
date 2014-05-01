@@ -105,14 +105,12 @@ class AirHockeyGame(AirHockeyTable):
         super(AirHockeyGame, self).remove_puck(puck)
         self.pucks.remove(puck)
 
-    def add_player(self):
-        pmass=3
-        pradius=11
-        p1inertia = pymunk.moment_for_circle(pmass, 0, pradius, (0,0))
-        player_body = pymunk.Body(pmass, p1inertia)
+    def add_player(self, mass=3, radius=11):
+        inertia = pymunk.moment_for_circle(mass, 0, radius, (0,0))
+        player_body = pymunk.Body(mass, inertia)
         player_body.position=(self.width-self.width/8, self.height/2)
 
-        player_shape = pymunk.Circle(player_body, pradius, (0,0))
+        player_shape = pymunk.Circle(player_body, radius, (0,0))
         player_shape.elasticity = 0.95
         self.space.add(player_body, player_shape)
         self.players.append(player_shape)
