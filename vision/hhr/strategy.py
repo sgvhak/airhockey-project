@@ -17,6 +17,44 @@ def calculate_speed_angle(pos1, pos2, time1, time2):
 
     return speed, angle
 
+class Circle(object):
+
+    def __init__(self, x, y, radius):
+        self.x = x
+        self.y = y
+        self.radius = radius
+
+    def intersect(self, p1, p2):
+        # Source: Watt, 3D Computer Graphics, Third Edition, p18-19
+        i = p2[0] - p1[0]
+        j = p2[1] - p1[1]
+
+        a = i*i + j*j
+        b = 2*i*(p1[0] - self.x) + 2*j*(p1[1] - self.y)
+        c = self.x*self.x + self.y*self.y + p1[0]*p1[0] + p1[1]*p1[1] + 2*(-self.x*p1[0] - self.y*p1[1]) - self.radius*self.radius
+
+        disc = b*b - 4*a*c
+
+        if disc > 0:
+            t1 = (-b + math.sqrt(disc)) / (2*a)
+            t2 = (-b - math.sqrt(disc)) / (2*a)
+
+            # Minimum value is the closes, 
+            # only values of t between 0 and 1 lie
+            # on the circle
+            t = min(t1, t2)
+            if t >= 0 and t <= 1:
+                x = p1[0] + t*i
+                y = p1[1] + t*j
+
+                return x,y
+
+        return None
+
+    def draw(self, frame, color=(255, 0, 0)):
+        pos = (int(self.x), int(self.y))
+        cv2.circle(frame, pos, int(self.radius), color, 2)
+
 class TableSimPredictor(PuckPredictor):
 
     def __init__(self, threshold, width, height, num_steps=10, avg_size=10, defense_radius=40):
@@ -37,11 +75,7 @@ class TableSimPredictor(PuckPredictor):
         self.speeds = MovingAverage(avg_size) 
 
         # Create defense circle located at center of right most goal
-        d_body = pymunk.Body(pymunk.inf, pymunk.inf)
-        #d_body = pymunk.Body()
-        d_body.position = self.table.width, self.table.height / 2
-        self.defense_circle = pymunk.Circle(d_body, defense_radius)
-        self.table.space.add(d_body, self.defense_circle)
+        self.defense_circle = Circle(self.table.width, self.table.height / 2, defense_radius)
 
     def threshold(self):
         return self._threshold
@@ -95,9 +129,8 @@ class TableSimPredictor(PuckPredictor):
 
         i_point = None
         for path in zip(future_pos[:-1], future_pos[1:]):
-            query_info = self.defense_circle.segment_query(path[0], path[1])
-            if query_info:
-                i_point = query_info.get_hit_point()
+            i_point = self.defense_circle.intersect(path[0], path[1])
+            if i_point:
                 break
 
         return i_point
@@ -118,5 +151,4 @@ class TableSimPredictor(PuckPredictor):
             cv2.rectangle(frame, linea, lineb, (255,0,0))
 
         # Draw defense circle
-        pos = tuple([ int(p) for p in self.defense_circle.body.position ])
-        cv2.circle(frame, pos, int(self.defense_circle.radius), (255, 0, 0), 2)
+        self.defense_circle.draw(frame, (255, 0, 0))
