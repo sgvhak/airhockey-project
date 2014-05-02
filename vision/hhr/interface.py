@@ -36,16 +36,25 @@ class CaptureSource(object):
         'Release any objects that need cleanup'
         return
 
-class PuckPredictor(object):
-    'Represents a class that accepts puck events and builds a prediction of where it will be'
+class ObjectDetector(object):
+    'Represents method of detecting the puck'
 
     __metaclass__ = ABCMeta
 
     @abstractmethod
-    def threshold(self):
-        'Return the HSVThreshold object associated with the predictor'
-
+    def frame(self):
+        'Returns a frame displaying video or object location'
         return
+
+    @abstractmethod
+    def object_location(self):
+        'Return None if no object is located, other wise the x,y coordinates a tuple and the radius'
+        return
+
+class PuckPredictor(object):
+    'Represents a class that accepts puck events and builds a prediction of where it will be'
+
+    __metaclass__ = ABCMeta
 
     @abstractmethod
     def add_puck_event(self, tick, coords, radius):

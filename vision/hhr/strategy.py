@@ -57,9 +57,8 @@ class Circle(object):
 
 class TableSimPredictor(PuckPredictor):
 
-    def __init__(self, threshold, width, height, num_steps=10, avg_size=10, defense_radius=40):
+    def __init__(self, width, height, num_steps=10, avg_size=10, defense_radius=40):
         self.table = AirHockeyTable(width, height)
-        self._threshold = threshold
         self.num_steps = num_steps
 
         # Store current posistion and time 
@@ -76,9 +75,6 @@ class TableSimPredictor(PuckPredictor):
 
         # Create defense circle located at center of right most goal
         self.defense_circle = Circle(self.table.width, self.table.height / 2, defense_radius)
-
-    def threshold(self):
-        return self._threshold
 
     def add_puck_event(self, tick, coords, radius):
 

@@ -6,6 +6,7 @@ from ConfigParser import ConfigParser
 import argparse
 
 from hhr import gui, vision, strategy, control
+from hhr.main import main_loop
 
 # Default values for command line arguments
 DFLT_CAPTURE_SOURCE = 0
@@ -36,8 +37,8 @@ def main():
 
     gui.create_windows()
 
-    thresholds = gui.create_trackbars(config, 1)
-    predictors = map(lambda t: strategy.TableSimPredictor(t, args.capture_width, args.capture_height), thresholds)
+    threshold = gui.create_trackbars(config, 1)[0]
+    predictor = strategy.TableSimPredictor(args.capture_width, args.capture_height)
 
     source = None
     controller = None
@@ -49,15 +50,11 @@ def main():
     else:
         parser.error("Unknown capture source: %s" % args.capture_source)
 
-    vis = vision.Vision(source, predictors, controller)
+    detector = vision.VisionDetector(source, threshold)
 
-    try:
-        vis.capture_loop()
-    except vision.NoVideoSourceError:
-        print "No video source found. You may need to specify use of a simulated video source."
+    main_loop(detector, predictor, controller)
 
-    for thresh in thresholds:
-        thresh.save_config(config)
+    threshold.save_config(config)
 
     gui.destroy_windows()
 

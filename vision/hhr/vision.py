@@ -2,13 +2,9 @@ import logging
 import cv2
 import numpy as np
 
-from .interface import CaptureSource
+from .interface import CaptureSource, ObjectDetector
 from .sim import AirHockeyGame
-from .gui import VID_WIN_NAME, OUT_WIN_NAME
-from .calc import MovingAverage
-
-# How many time values to save for averaging for calculating FPS
-NUM_TIME_RECORDS = 5
+from .gui import OUT_WIN_NAME
 
 class NoVideoSourceError(Exception):
     pass
@@ -65,6 +61,9 @@ class CV2CaptureSource(CaptureSource):
         self.cap.set(cv2.cv.CV_CAP_PROP_FRAME_WIDTH, width)
         self.cap.set(cv2.cv.CV_CAP_PROP_FRAME_HEIGHT, height)
 
+    def __del__(self):
+        self.release()
+
     def frame(self):
         ret, frame = self.cap.read()
         if not ret:
@@ -87,50 +86,27 @@ class SimulatedCaptureSource(CaptureSource):
     def release(self):
         pass
 
-class Vision(object):
-    def __init__(self, source, predictors, controller):
+class VisionDetector(object):
+    def __init__(self, source, threshold):
         self.source = source
-        self.predictors = predictors
-        self.controller = controller
+        self.threshold = threshold
 
-    def capture_loop(self):
-        time_avg = MovingAverage(NUM_TIME_RECORDS)
-        while(True):
-            time_beg = cv2.getTickCount()
+    def frame(self):
+        return self.source.frame()
 
-            # Capture frame-by-frame
-            frame = self.source.frame()
+    def object_location(self):
+        frame = self.frame()
 
-            mask = np.zeros(frame.shape, np.uint8)
-            for pred in self.predictors:
-                thresh = pred.threshold()
-                if thresh != None and thresh.enabled():
-                    hsv_min = thresh.min_values()
-                    hsv_max = thresh.max_values()
+        mask = np.zeros(frame.shape, np.uint8)
+        if self.threshold != None and self.threshold.enabled():
+            hsv_min = self.threshold.min_values()
+            hsv_max = self.threshold.max_values()
 
-                    coords, radius, thresh_mask = detect_circular_object(frame, hsv_min, hsv_max, (255,0,0))
-                    pred.add_puck_event(cv2.getTickCount(), coords, radius)
+            coords, radius, thresh_mask = detect_circular_object(frame, hsv_min, hsv_max, (255,0,0))
+            mask = cv2.add(mask, thresh_mask)
 
-                    i_point = pred.intercept_point()
-                    pred.draw(frame)
-
-                    if self.controller:
-                        self.controller.move_to(i_point)
-
-                    mask = cv2.add(mask, thresh_mask)
-
-            time_end = (cv2.getTickCount() - time_beg) / cv2.getTickFrequency()
-            time_avg.add_value(time_end)
-
-            # Write FPS to frame
-            cv2.putText(frame, '%2.2f FPS' % (1/time_avg.average), (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (0,0,255))
-
-            # Draw the original frame and our debugging frame in different windows
-            cv2.imshow(VID_WIN_NAME, frame)
             cv2.imshow(OUT_WIN_NAME, mask)
 
-            if cv2.waitKey(1) & 0xFF == ord('q'):
-                break
-
-        # When everything done, release the capture
-        self.source.release()
+            return coords, radius
+        else:
+            return None
