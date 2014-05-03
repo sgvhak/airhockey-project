@@ -21,20 +21,27 @@ class PixyArduinoDetector(ObjectDetector):
         return self.frame_
 
     def object_location(self):
-        # Zere out frame for new object
+        # Zero out frame for new object since we draw the detected circle
         self.frame_[:] = 0
 
         ser_data = self.serial.readline()
-
         if len(ser_data) > 0:
             # Data will look like:
             # block index,signature,x,y,width,height
             parts = ser_data.strip().split(',')
             if len(parts) == 6:
-                _,_, x, y, width, height = [ int(p) for p in parts ]
-                radius = min(width, height)
-                cv2.circle(self.frame_, (x,y), radius, (0,0,255), radius)
-                return (x,y), radius
+                try:
+                    _,_, x, y, width, height = [ int(p) for p in parts ]
+                    radius = min(width, height)
+                    cv2.circle(self.frame_, (x,y), radius, (0,0,255), -1)
+
+                    # Flush serial input otherwise it gets backlogged and coords lag
+                    self.serial.flushInput()
+
+                    return (x,y), radius
+                except ValueError:
+                    # Error parsing parts and turning them into integers
+                    return None
             else:
                 return None
         else:

@@ -41,6 +41,7 @@ def main():
 
     source = None
     controller = None
+    threshold = None
     if type(args.capture_source) is int or args.capture_source.isdigit():
         source = vision.CV2CaptureSource(int(args.capture_source), args.capture_width, args.capture_height)
         threshold = gui.create_trackbar(config)
@@ -58,7 +59,8 @@ def main():
 
     main_loop(detector, predictor, controller)
 
-    threshold.save_config(config)
+    if threshold:
+        threshold.save_config(config)
 
     gui.destroy_windows()
 
