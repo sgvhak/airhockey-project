@@ -6,7 +6,6 @@ from .interface import HSVThreshold
 # Names for various named windows
 VID_WIN_NAME = 'HHR - Video'
 THRESH_WIN_NAME = 'HHR - Thresholds'
-OUT_WIN_NAME = 'HHR - Output'
 
 # Names to use for the HSV color channels in track bars
 HSV_NAMES = ('H', 'S', 'V')
@@ -77,16 +76,12 @@ class HSVTrackBars(HSVThreshold):
         return self.values(MAX_BAR_NAME)
 
 def create_windows():
-    cv2.namedWindow(OUT_WIN_NAME, cv2.WINDOW_AUTOSIZE)
     cv2.namedWindow(VID_WIN_NAME, cv2.WINDOW_AUTOSIZE)
 
-def create_trackbars(config, num):
-    thresholds = []
-    for tidx in range(num):
-        win_name = THRESH_WIN_NAME + " %d" % tidx
-        cv2.namedWindow(win_name, cv2.WINDOW_AUTOSIZE)
-        thresholds.append( HSVTrackBars(win_name, config) )
-    return thresholds
+def create_trackbar(config):
+    win_name = THRESH_WIN_NAME
+    cv2.namedWindow(win_name, cv2.WINDOW_AUTOSIZE)
+    return HSVTrackBars(win_name, config)
 
 def destroy_windows():
     cv2.destroyAllWindows()

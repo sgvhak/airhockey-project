@@ -3,27 +3,23 @@
 
 Pixy pixy;
 
-void setup()
-{
+#define MAX_NUM_BLOCKS 1
+
+void setup() {
 
   Serial.begin(9600);
-  Serial.print("Starting...\n");
 }
 
-void loop()
-{ 
-  static int i = 0;
-  int j;
-  uint16_t blocks;
-  char buf[32]; 
-  
-  blocks = pixy.getBlocks();
-  
-  if (blocks)
-  {
-        sprintf(buf, "  block %d: ", 0);
-        Serial.print(buf); 
-        pixy.blocks[0].print();
-  }  
+void loop() { 
+    char buf[32]; 
+    uint16_t blocks = pixy.getBlocks();
+
+    if (blocks) {
+        for (int bidx = 0; bidx < min(blocks, MAX_NUM_BLOCKS); bidx++) {
+            Block b = pixy.blocks[bidx];
+            sprintf(buf, "%d,%d,%d,%d,%d,%d\n", bidx, b.signature, b.x, b.y, b.width, b.height);
+            Serial.print(buf);
+        }
+    }  
 }
 

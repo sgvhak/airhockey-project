@@ -4,7 +4,8 @@ import numpy as np
 
 from .interface import CaptureSource, ObjectDetector
 from .sim import AirHockeyGame
-from .gui import OUT_WIN_NAME
+
+MASK_WIN_NAME = 'HHR - Mask'
 
 class NoVideoSourceError(Exception):
     pass
@@ -86,8 +87,12 @@ class SimulatedCaptureSource(CaptureSource):
     def release(self):
         pass
 
-class VisionDetector(object):
+class VisionDetector(ObjectDetector):
     def __init__(self, source, threshold):
+        # Create window for threshold mask, not needed by
+        # other detectors
+        cv2.namedWindow(MASK_WIN_NAME, cv2.WINDOW_AUTOSIZE)
+
         self.source = source
         self.threshold = threshold
 
@@ -105,7 +110,7 @@ class VisionDetector(object):
             coords, radius, thresh_mask = detect_circular_object(frame, hsv_min, hsv_max, (255,0,0))
             mask = cv2.add(mask, thresh_mask)
 
-            cv2.imshow(OUT_WIN_NAME, mask)
+            cv2.imshow(MASK_WIN_NAME, mask)
 
             return coords, radius
         else:

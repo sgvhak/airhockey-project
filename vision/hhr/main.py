@@ -14,17 +14,21 @@ def main_loop(detector, predictor, controller):
 
         # Get frame which can be drawn on
         frame = detector.frame()
+
+        # Check if there is a detected object
         detect_res = detector.object_location()
 
+        # Predict movement and inform controller where to intercept
         if detect_res:
             coords, radius = detect_res 
-
             predictor.add_puck_event(cv2.getTickCount(), coords, radius)
             i_point = predictor.intercept_point()
-            predictor.draw(frame)
 
             if controller:
                 controller.move_to(i_point)
+
+        # Draw predictor information
+        predictor.draw(frame)
 
         time_end = (cv2.getTickCount() - time_beg) / cv2.getTickFrequency()
         time_avg.add_value(time_end)

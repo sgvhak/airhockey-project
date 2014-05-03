@@ -5,7 +5,7 @@ import sys
 from ConfigParser import ConfigParser
 import argparse
 
-from hhr import gui, vision, strategy, control
+from hhr import gui, vision, strategy, control, pixy
 from hhr.main import main_loop
 
 # Default values for command line arguments
@@ -37,20 +37,24 @@ def main():
 
     gui.create_windows()
 
-    threshold = gui.create_trackbars(config, 1)[0]
     predictor = strategy.TableSimPredictor(args.capture_width, args.capture_height)
 
     source = None
     controller = None
     if type(args.capture_source) is int or args.capture_source.isdigit():
         source = vision.CV2CaptureSource(int(args.capture_source), args.capture_width, args.capture_height)
+        threshold = gui.create_trackbar(config)
+        detector = vision.VisionDetector(source, threshold)
     elif args.capture_source.lower() == "sim":
         source = vision.SimulatedCaptureSource(args.capture_width, args.capture_height)
         controller = control.SimGameController(source.game)
+        threshold = gui.create_trackbar(config)
+        detector = vision.VisionDetector(source, threshold)
+    elif args.capture_source.lower() == "pixy":
+        detector = pixy.PixyArduinoDetector('/dev/ttyACM0')
     else:
         parser.error("Unknown capture source: %s" % args.capture_source)
 
-    detector = vision.VisionDetector(source, threshold)
 
     main_loop(detector, predictor, controller)
 
