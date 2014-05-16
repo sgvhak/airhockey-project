@@ -33,52 +33,52 @@
 class LinkSPI
 {
 public:
-  void init(uint8_t addr)
-  {
-    outLen = 0;
-    SPI.setClockDivider(SPI_CLOCK_DIV16);
-    SPI.begin();	
-  }
-  uint16_t getWord()
-  {
-    // ordering is different because Pixy is sending 16 bits through SPI 
-	// instead of 2 bytes in a 16-bit word as with I2C
-    uint16_t w;
-	uint8_t c, cout = 0;
-	
-	if (outLen)
-	{
-		w = SPI.transfer(PIXY_SYNC_BYTE_DATA);
-		cout = outBuf[outIndex++];
-		if (outIndex==outLen)
-			outLen = 0; 
-	}
-	else
-      w = SPI.transfer(PIXY_SYNC_BYTE);
-    w <<= 8;
-	c = SPI.transfer(cout);
-	w |= c;
-	
-    return w;
-  }
-  uint8_t getByte()
-  {
-	return SPI.transfer(0x00);
-  }
-  int8_t send(uint8_t *data, uint8_t len)
-  {
-	if (len>PIXY_OUTBUF_SIZE || outLen!=0)
-		return -1;
-	memcpy(outBuf, data, len);
-	outLen = len;
-	outIndex = 0;
-	return len;
-  }
+    void init(uint8_t addr)
+    {
+        outLen = 0;
+        SPI.setClockDivider(SPI_CLOCK_DIV16);
+        SPI.begin();
+    }
+    uint16_t getWord()
+    {
+        // ordering is different because Pixy is sending 16 bits through SPI
+        // instead of 2 bytes in a 16-bit word as with I2C
+        uint16_t w;
+        uint8_t c, cout = 0;
+
+        if (outLen)
+        {
+            w = SPI.transfer(PIXY_SYNC_BYTE_DATA);
+            cout = outBuf[outIndex++];
+            if (outIndex==outLen)
+                outLen = 0;
+        }
+        else
+            w = SPI.transfer(PIXY_SYNC_BYTE);
+        w <<= 8;
+        c = SPI.transfer(cout);
+        w |= c;
+
+        return w;
+    }
+    uint8_t getByte()
+    {
+        return SPI.transfer(0x00);
+    }
+    int8_t send(uint8_t *data, uint8_t len)
+    {
+        if (len>PIXY_OUTBUF_SIZE || outLen!=0)
+            return -1;
+        memcpy(outBuf, data, len);
+        outLen = len;
+        outIndex = 0;
+        return len;
+    }
 
 private:
-	uint8_t outBuf[PIXY_OUTBUF_SIZE];
-	uint8_t outLen;
-	uint8_t outIndex;
+    uint8_t outBuf[PIXY_OUTBUF_SIZE];
+    uint8_t outLen;
+    uint8_t outIndex;
 };
 
 
