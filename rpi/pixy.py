@@ -34,9 +34,9 @@ def print_block(block):
 
 class Pixy:
     def __init__(self, link, addr=PIXY_DEFAULT_ADDR):
-        self.link = link
+        self.link = link       # communication module
         self.blocks = []       # array of message byte arrays
-        self.skipStart = False # boolean
+        self.skipStart = False # boolean indicating whether sync is needed
         self.link.init(addr)
 
     def getBlocks(self, maxBlocks=1000):
@@ -80,6 +80,7 @@ class Pixy:
 
     def _short_to_bytes(v):
         """Split a short into a byte array.
+        :param v: data value of type uint16_t
         :returns: [msb, lsb]"""
         return [ (v >> 8) & 0xff, v & 0xff ]
 
@@ -89,11 +90,7 @@ class Pixy:
         :param s1: second word of serial data, uint16_6
         :returns: int8_t number of bytes written
         """
-        def msb(v):
-            return (v >> 8) & 0xff
-        def lsb(v):
-            return v & 0xff
-        # TODO check if short should be written msb first or lsb first
+        # Array of 6 bytes, command header plus two short words
         outBuf = [ 0x00, 0xff ] + self._short_to_bytes(s0) + self._short_to_bytes(s1)
         return self.link.send(outBuf)
 
