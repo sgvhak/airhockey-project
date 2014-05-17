@@ -27,9 +27,13 @@ PIXY_OUTBUF_SIZE     =      6
 
 class LinkSPI:
     def __init__(self):
+        pass
+
+    def init(self, addr):
+        """ addr unused """
         self.outBuf = []
-        SPI.setClockDivider(SPI.SPI_CLOCK_DIV16);
-        SPI.begin();
+        SPI.setClockDivider(SPI.SPI_CLOCK_DIV16)
+        SPI.begin()
 
     def getWord(self):
         """ returns uint16_t """
@@ -51,7 +55,7 @@ class LinkSPI:
 
     def getByte(self):
         """ return uint8_t """
-        return SPI.transfer(0x00);
+        return SPI.transfer(0x00)   # write a dummy byte so we can receive a byte
 
     def send(self, data):
         """ 

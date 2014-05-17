@@ -1,4 +1,4 @@
-import pixy
+from pixy import Pixy
 import pixy_link
 
 def setup():
@@ -6,7 +6,7 @@ def setup():
     pass
 
 def loop():
-    pixy = pixy.Pixy(pixy_link.LinkSPI())
+    pixy = Pixy(pixy_link.LinkSPI())
     while(True):
         blocks = pixy.getBlocks()
         for ii, block in enumerate(blocks):
