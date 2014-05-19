@@ -51,8 +51,10 @@ def main():
         controller = control.SimGameController(source.game)
         threshold = gui.create_trackbar(config)
         detector = vision.VisionDetector(source, threshold)
-    elif args.capture_source.lower() == "pixy":
+    elif args.capture_source.lower() == "pixy_arduino":
         detector = pixy.PixyArduinoDetector('/dev/ttyACM0')
+    elif args.capture_source.lower() == "pixy_rpi":
+        detector = pixy.PixyRPiDetector()
     else:
         parser.error("Unknown capture source: %s" % args.capture_source)
 
