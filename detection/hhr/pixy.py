@@ -56,10 +56,12 @@ class PixyArduinoDetector(PixyDetector):
             parts = ser_data.strip().split(',')
             if len(parts) == 6:
                 try:
-                    _,_, x, y, width, height = [ int(p) for p in parts ]
+                    _, sig, x, y, width, height = [ int(p) for p in parts ]
 
                     # Flush serial input otherwise it gets backlogged and coords lag
                     self.serial.flushInput()
+
+                    return [(sig, x, y, width, height)]
                 except ValueError:
                     # Error parsing parts and turning them into integers
                     return ()
