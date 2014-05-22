@@ -33,11 +33,12 @@ class Circle(object):
         b = 2*i*(p1[0] - self.x) + 2*j*(p1[1] - self.y)
         c = self.x*self.x + self.y*self.y + p1[0]*p1[0] + p1[1]*p1[1] + 2*(-self.x*p1[0] - self.y*p1[1]) - self.radius*self.radius
 
-        disc = b*b - 4*a*c
+        disc = b*b - 4*a*c  # discriminant
 
         if disc > 0:
-            t1 = (-b + math.sqrt(disc)) / (2*a)
-            t2 = (-b - math.sqrt(disc)) / (2*a)
+            disc_sqrt = math.sqrt(disc)  # fixme: better varname?
+            t1 = (-b + disc_sqrt) / (2*a)
+            t2 = (-b - disc_sqrt) / (2*a)
 
             # Minimum value is the closes, 
             # only values of t between 0 and 1 lie
