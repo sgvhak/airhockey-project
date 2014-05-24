@@ -18,10 +18,8 @@ class MovingAverage(object):
 
     @property
     def total(self):
-        if self._num_values == 0:
-            return 0
-        else:
-            return self._total
+        # _total initialized to 0 so _num_values check unnecessary.
+        return self._total
 
     @property
     def average(self):

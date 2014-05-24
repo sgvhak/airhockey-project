@@ -8,12 +8,18 @@ from .interface import PuckPredictor
 from .calc import MovingAverage
 
 def calculate_speed_angle(pos1, pos2, time1, time2):
-    del_y = pos2[1] - pos1[1]
-    del_x = pos2[0] - pos1[0]
-    del_time = (time2 - time1) / cv2.getTickFrequency()
+    """
+    :param pos1: x,y tuple position from time1
+    :param pos2: x,y tuple position from time2
+    :param time1: time stamp of pos1, units seconds
+    :param time2: time stamp of pos2, units seconds
+    """
+    dy = pos2[1] - pos1[1]
+    dx = pos2[0] - pos1[0]
+    dt = (time2 - time1)# / cv2.getTickFrequency()
 
-    angle = math.atan2(del_y, del_x)
-    speed = math.sqrt(del_x * del_x + del_y * del_y) / del_time 
+    angle = math.atan2(dy, dx)
+    speed = math.sqrt(dx * dx + dy * dy) / dt if dt != 0 else 0
 
     return speed, angle
 
@@ -26,26 +32,27 @@ class Circle(object):
 
     def intersect(self, p1, p2):
         # Source: Watt, 3D Computer Graphics, Third Edition, p18-19
-        i = p2[0] - p1[0]
-        j = p2[1] - p1[1]
+        dx = p2[0] - p1[0]
+        dy = p2[1] - p1[1]
 
-        a = i*i + j*j
-        b = 2*i*(p1[0] - self.x) + 2*j*(p1[1] - self.y)
+        a = dx*dx + dy*dy
+        b = 2*dx*(p1[0] - self.x) + 2*dy*(p1[1] - self.y)
         c = self.x*self.x + self.y*self.y + p1[0]*p1[0] + p1[1]*p1[1] + 2*(-self.x*p1[0] - self.y*p1[1]) - self.radius*self.radius
 
-        disc = b*b - 4*a*c
+        disc = b*b - 4*a*c  # discriminant
 
         if disc > 0:
-            t1 = (-b + math.sqrt(disc)) / (2*a)
-            t2 = (-b - math.sqrt(disc)) / (2*a)
+            disc_sqrt = math.sqrt(disc)  # fixme: better varname?
+            t1 = (-b + disc_sqrt) / (2*a)
+            t2 = (-b - disc_sqrt) / (2*a)
 
             # Minimum value is the closes, 
             # only values of t between 0 and 1 lie
             # on the circle
             t = min(t1, t2)
             if t >= 0 and t <= 1:
-                x = p1[0] + t*i
-                y = p1[1] + t*j
+                x = p1[0] + t*dx
+                y = p1[1] + t*dy
 
                 return x,y
 
@@ -58,6 +65,13 @@ class Circle(object):
 class TableSimPredictor(PuckPredictor):
 
     def __init__(self, width, height, num_steps=10, avg_size=10, defense_radius=40):
+        """
+        :param width: table width in (units?)
+        :param height: table width in (units?)
+        :param num_steps: frames per second in simulation
+        :param avg_size: number of elements in moving average
+        :param defense_radius: constraint circle for paddle movements in (units?) 
+        """
         self.table = AirHockeyTable(width, height)
         self.num_steps = num_steps
 
@@ -84,7 +98,10 @@ class TableSimPredictor(PuckPredictor):
         self.curr_pos = coords
         self.curr_time = tick
 
-        speed, angle = calculate_speed_angle(last_pos, self.curr_pos, last_time, self.curr_time)
+        if tick == 0:
+            speed, angle = (0, 0)
+        else:
+            speed, angle = calculate_speed_angle(last_pos, self.curr_pos, last_time, self.curr_time)
 
         self.speeds.add_value(speed)
         self.angles.add_value(angle)
@@ -111,7 +128,7 @@ class TableSimPredictor(PuckPredictor):
             self.table.space.step(dt)
             future_pos.append(tuple(puck.body.position))
             future_vel.append(tuple(puck.body.velocity)) 
-        
+
         # Remove the puck once the simulation is over
         self.table.remove_puck(puck)
 
