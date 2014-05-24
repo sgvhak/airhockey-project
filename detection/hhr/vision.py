@@ -78,7 +78,7 @@ class SimulatedCaptureSource(CaptureSource):
         self.game = game
 
     def frame(self):
-        self.game.process_frame()
+        self.game.render()
         frame = self.game.get_frame()
         frame = cv2.cvtColor(frame, cv2.COLOR_RGB2BGR);
         return frame

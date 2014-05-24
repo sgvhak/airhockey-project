@@ -196,6 +196,10 @@ class AirHockeyGame(AirHockeyTable):
 
         return True
 
+    def get_frame(self):
+        frame = np.fromstring(pygame.image.tostring(self.screen, 'RGB'), dtype=np.uint8).reshape((self.screen_height, self.screen_width, 3))
+        return frame
+
 if __name__=="__main__":
     ah_game = AirHockeyGame(320, 240)
 

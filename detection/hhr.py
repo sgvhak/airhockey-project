@@ -8,7 +8,7 @@ import argparse
 from hhr import gui, vision, strategy, control, pixy
 from hhr.main import main_loop
 
-from hhr.sim_pymunk import AirHockeyGame
+from hhr.game_pymunk import AirHockeyGame
 
 # Default values for command line arguments
 DFLT_CAPTURE_SOURCE = 0
