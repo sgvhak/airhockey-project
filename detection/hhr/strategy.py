@@ -4,6 +4,8 @@ from abc import abstractmethod
 import cv2
 import pymunk
 
+from Box2D import *
+
 import sim_pymunk, sim_box2d
 from .interface import PuckPredictor
 from .calc import MovingAverage
@@ -180,4 +182,58 @@ class PyMunkPredictor(TableSimPredictor):
         for line in self.table.walls:
             linea = tuple([int(a) for a in line.a])
             lineb = tuple([int(b) for b in line.b])
+            cv2.rectangle(frame, linea, lineb, (255,0,0))
+
+
+class Box2dPredictor(TableSimPredictor):
+
+    def __init__(self, width, height, num_steps=10, **kwargs):
+        super(Box2dPredictor, self).__init__(width, height, **kwargs)
+
+        import game_box2d
+        self.table = game_box2d.AirHockeyGame(width, height)
+        self.num_steps = num_steps
+
+    def predicted_path(self):
+
+        puck = self.table.pucks[0]
+        puck.position = ( self.curr_pos[0] / sim_box2d.PPM, self.table.height - (self.curr_pos[1] / sim_box2d.PPM) )
+
+        # Convert angle, speed averages tor regular floats, pymunk
+        # doesn't seem to like numpy floats
+        angle = float(self.angles.average) 
+        speed = float(self.speeds.average) / sim_box2d.PPM
+
+        impulse = speed * b2Mul(b2Rot(angle), b2Vec2(-1, -1))
+        puck.linearVelocity = impulse
+        print speed, math.degrees(angle), impulse
+
+        # Simulate several steps into the future
+        future_pos = []
+        future_vel = []
+        dt = 1.0/10
+        for t in range(self.num_steps):
+            self.table.world.Step(dt, 6, 2)
+            p = puck.position
+            future_pos.append( (p[0] * sim_box2d.PPM, (self.table.height - p[1]) * sim_box2d.PPM) )
+            #self.table.render()
+            #print future_pos[-1], puck.linearVelocity
+            #raw_input()
+
+
+        self.pred_path = future_pos
+        self.pred_vel = future_vel
+
+        return future_pos, future_vel
+
+    def draw(self, frame):
+        'Draws table and puck future positions using last predicted paths'
+    
+        super(Box2dPredictor, self).draw(frame)
+
+        # Draw simulated universe walls
+        for fixture in self.table.walls.fixtures:
+            vertices = fixture.shape.vertices
+            linea = tuple([int(a*sim_box2d.PPM) for a in vertices[0]])
+            lineb = tuple([int(b*sim_box2d.PPM) for b in vertices[1]])
             cv2.rectangle(frame, linea, lineb, (255,0,0))
