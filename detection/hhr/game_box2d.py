@@ -2,6 +2,9 @@
 
 import pygame
 from pygame.locals import *
+from pygame.color import *
+  
+import numpy as np
 
 from Box2D import *
 
@@ -14,8 +17,8 @@ colors = {
     b2_staticBody  : (255,255,255,255),
     b2_dynamicBody : (127,127,127,255),
     b2_kinematicBody: (127,127,230,255),
-    'mouse_point'     : b2Color(0,1,0),
-    'joint_line'      : b2Color(0.8,0.8,0.8),
+    'mouse_point'   : b2Color(0,1,0),
+    'joint_line'    : b2Color(0.8,0.8,0.8),
 }
 
 class fwQueryCallback(b2QueryCallback):
@@ -59,8 +62,10 @@ class AirHockeyGame(AirHockeyTable):
             b2LoopShape: self.draw_loop,
         }
 
-    def add_player(self):
-        self.players.append( self.add_circle(b2Vec2(self.width - self.width / 8, self.height / 2) + self.offset, 11.0 / PPM, 3) )
+    def add_player(self, density=3.0):
+        player = self.add_circle(b2Vec2(self.table_width - self.table_width / 8, self.table_height / 2) + self.offset, 11.0 / PPM, density=density) 
+        self.players.append(player)
+        return player
 
     def remove_player(self, player):
         if not player in self.players:
@@ -107,35 +112,42 @@ class AirHockeyGame(AirHockeyTable):
             self.mouseJoint.target = p
 
     def to_world(self, x, y):
-        return b2Vec2(x / PPM, (self.screen_height - y) / PPM)
+        return b2Vec2(x / PPM, y / PPM)
 
     def to_screen(self, point):
-        return ( int(point.x) * PPM, int(self.screen_height - point.y * PPM) )
+        return ( int(point.x * PPM), int(point.y * PPM) )
 
     def fix_vertices(self, vertices):
         return [self.to_screen(v) for v in vertices]
 
-    def draw_polygon(self, polygon,  body, fixture):
+    def draw_polygon(self, polygon, body, fixture, color):
         transform=body.transform
         vertices=self.fix_vertices([transform*v for v in polygon.vertices])
         pygame.draw.polygon(self.screen, [c/2.0 for c in colors[body.type]], vertices, 0)
-        pygame.draw.polygon(self.screen, colors[body.type], vertices, 1)
+        pygame.draw.polygon(self.screen, color, vertices, 1)
 
-    def draw_circle(self, circle, body, fixture):
+    def draw_circle(self, circle, body, fixture, color):
         position=self.fix_vertices([body.transform*circle.pos])[0]
-        pygame.draw.circle(self.screen, colors[body.type], position, int(circle.radius*PPM))
+        pygame.draw.circle(self.screen, color, position, int(circle.radius*PPM))
 
-    def draw_edge(self, edge, body, fixture):
+    def draw_edge(self, edge, body, fixture, color):
         vertices=self.fix_vertices([body.transform*edge.vertex1, body.transform*edge.vertex2])
-        pygame.draw.line(self.screen, colors[body.type], vertices[0], vertices[1])
+        pygame.draw.line(self.screen, color, vertices[0], vertices[1])
 
-    def draw_loop(self, loop, body, fixture):
+    def draw_loop(self, loop, body, fixture, color):
         transform=body.transform
         vertices=self.fix_vertices([transform*v for v in loop.vertices])
         v1=vertices[-1]
         for v2 in vertices:
-            pygame.draw.line(self.screen, colors[body.type], v1, v2)
+            pygame.draw.line(self.screen, color, v1, v2)
             v1=v2
+
+    def draw_body(self, body, color=None):
+        if color == None:
+            color = colors[body.type]
+
+        for fixture in body.fixtures:
+            self.draw[fixture.shape.__class__](fixture.shape, body, fixture, color)
 
     def render(self):
         # Check the event queue
@@ -155,24 +167,29 @@ class AirHockeyGame(AirHockeyTable):
                 p = self.to_world(*event.pos)
                 self.update_mouse_joint(p)
 
-        # Remove old and add new puck if it goes out of the table
+        # Clear the frame
+        self.screen.fill((0,0,0,0))
+
         for puck in self.pucks:
+            # Remove old and add new puck if it goes out of the table
             if puck.position[0] < self.offset[0] or puck.position[0] > (self.width + self.offset[0]):
                 self.remove_puck(puck)
                 self.add_puck()
+        
+            # Draw puck
+            self.draw_body(puck, THECOLORS["red"])
 
-        # Remove old and add new player if it goes out of the table
         for player in self.players:
+            # Remove old and add new player if it goes out of the table
             if player.position[0] < self.offset[0] or player.position[0] > (self.width + self.offset[0]):
                 self.remove_player(player)
                 self.add_player()
 
-        self.screen.fill((0,0,0,0))
-        # Draw the world
-        for body in self.world.bodies:
-            # The body gives us the position and angle of its shapes
-            for fixture in body.fixtures:
-                self.draw[fixture.shape.__class__](fixture.shape, body, fixture)
+            # Draw player paddle
+            self.draw_body(player)
+
+        # Draw the walls
+        self.draw_body(self.walls)
 
         # If there's a mouse joint, draw the connection between the object and the current pointer position.
         if self.mouseJoint:

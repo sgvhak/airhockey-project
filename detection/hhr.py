@@ -8,7 +8,8 @@ import argparse
 from hhr import gui, vision, strategy, control, pixy
 from hhr.main import main_loop
 
-from hhr.game_pymunk import AirHockeyGame
+from hhr.game_pymunk import AirHockeyGame as pymunk_game
+from hhr.game_box2d import AirHockeyGame as box2d_game
 
 # Default values for command line arguments
 DFLT_CAPTURE_SOURCE = 0
@@ -50,9 +51,11 @@ def main():
         threshold = gui.create_trackbar(config)
         detector = vision.VisionDetector(source, threshold)
     elif args.capture_source.lower() == "sim":
-        game = AirHockeyGame(args.capture_width, args.capture_height)
+        game = pymunk_game(args.capture_width, args.capture_height)
+        #game = box2d_game(args.capture_width, args.capture_height)
         source = vision.SimulatedCaptureSource(game)
-        controller = control.SimGameController(game)
+        controller = control.PyMunkGameController(game)
+        #controller = control.Box2dGameController(game)
         threshold = gui.create_trackbar(config)
         detector = vision.VisionDetector(source, threshold)
     elif args.capture_source.lower() == "pixy_arduino":

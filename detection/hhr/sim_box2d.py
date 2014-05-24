@@ -52,7 +52,9 @@ class AirHockeyTable(object):
         return circle
 
     def add_puck(self):
-        self.pucks.append( self.add_circle(b2Vec2(self.width - self.width / 2, self.height / 2) + self.offset, 9.0 / PPM, 1) )
+        puck = self.add_circle(b2Vec2(self.table_width / 2, self.table_height / 2) + self.offset, 9.0 / PPM, 1)
+        self.pucks.append(puck)
+        return puck
 
     def remove_puck(self, puck):
         if not puck in self.pucks:

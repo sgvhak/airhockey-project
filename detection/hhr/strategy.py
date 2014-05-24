@@ -197,16 +197,16 @@ class Box2dPredictor(TableSimPredictor):
     def predicted_path(self):
 
         puck = self.table.pucks[0]
-        puck.position = ( self.curr_pos[0] / sim_box2d.PPM, self.table.height - (self.curr_pos[1] / sim_box2d.PPM) )
+        puck.position = ( self.curr_pos[0] / sim_box2d.PPM, self.curr_pos[1] / sim_box2d.PPM )
 
         # Convert angle, speed averages tor regular floats, pymunk
         # doesn't seem to like numpy floats
         angle = float(self.angles.average) 
         speed = float(self.speeds.average) / sim_box2d.PPM
 
-        impulse = speed * b2Mul(b2Rot(angle), b2Vec2(-1, -1))
-        puck.linearVelocity = impulse
-        print speed, math.degrees(angle), impulse
+        impulse = speed * b2Rot(angle).x_axis
+        puck.linearVelocity = b2Vec2(0, 0)
+        puck.ApplyLinearImpulse(impulse, puck.worldCenter, wake=True)
 
         # Simulate several steps into the future
         future_pos = []
@@ -215,11 +215,7 @@ class Box2dPredictor(TableSimPredictor):
         for t in range(self.num_steps):
             self.table.world.Step(dt, 6, 2)
             p = puck.position
-            future_pos.append( (p[0] * sim_box2d.PPM, (self.table.height - p[1]) * sim_box2d.PPM) )
-            #self.table.render()
-            #print future_pos[-1], puck.linearVelocity
-            #raw_input()
-
+            future_pos.append( (p[0] * sim_box2d.PPM, p[1] * sim_box2d.PPM) )
 
         self.pred_path = future_pos
         self.pred_vel = future_vel
