@@ -1,9 +1,10 @@
 import math
+from abc import abstractmethod
 
 import cv2
 import pymunk
 
-from .sim import AirHockeyTable
+import sim_pymunk, sim_box2d
 from .interface import PuckPredictor
 from .calc import MovingAverage
 
@@ -16,7 +17,7 @@ def calculate_speed_angle(pos1, pos2, time1, time2):
     """
     dy = pos2[1] - pos1[1]
     dx = pos2[0] - pos1[0]
-    dt = (time2 - time1)# / cv2.getTickFrequency()
+    dt = (time2 - time1) / cv2.getTickFrequency()
 
     angle = math.atan2(dy, dx)
     speed = math.sqrt(dx * dx + dy * dy) / dt if dt != 0 else 0
@@ -64,16 +65,13 @@ class Circle(object):
 
 class TableSimPredictor(PuckPredictor):
 
-    def __init__(self, width, height, num_steps=10, avg_size=10, defense_radius=40):
+    def __init__(self, width, height, avg_size=10, defense_radius=40):
         """
-        :param width: table width in (units?)
-        :param height: table width in (units?)
-        :param num_steps: frames per second in simulation
+        :param width: table width in pixels
+        :param height: table width in pixels
         :param avg_size: number of elements in moving average
-        :param defense_radius: constraint circle for paddle movements in (units?) 
+        :param defense_radius: constraint circle for paddle movements in pixels
         """
-        self.table = AirHockeyTable(width, height)
-        self.num_steps = num_steps
 
         # Store current posistion and time 
         self.curr_pos = (0, 0)
@@ -88,7 +86,7 @@ class TableSimPredictor(PuckPredictor):
         self.speeds = MovingAverage(avg_size) 
 
         # Create defense circle located at center of right most goal
-        self.defense_circle = Circle(self.table.width, self.table.height / 2, defense_radius)
+        self.defense_circle = Circle(width, height / 2, defense_radius)
 
     def add_puck_event(self, tick, coords, radius):
 
@@ -105,6 +103,42 @@ class TableSimPredictor(PuckPredictor):
 
         self.speeds.add_value(speed)
         self.angles.add_value(angle)
+
+    @abstractmethod
+    def predicted_path(self):
+        'Stores the predicted path into self.pred_path and returns it'
+        pass
+
+    def intercept_point(self):
+        future_pos, future_vel = self.predicted_path()
+
+        i_point = None
+        for path in zip(future_pos[:-1], future_pos[1:]):
+            i_point = self.defense_circle.intersect(path[0], path[1])
+            if i_point:
+                break
+
+        return i_point
+
+    def draw(self, frame):
+        'Draws table and puck future positions using last predicted paths'
+
+        # Draw predicted path
+        for path in zip(self.pred_path[:-1], self.pred_path[1:]):
+            p1 = tuple([int(p) for p in path[0]])
+            p2 = tuple([int(p) for p in path[1]])
+            cv2.line(frame,p1,p2,(255,0,0),5)
+
+        # Draw defense circle
+        self.defense_circle.draw(frame, (255, 0, 0))
+
+class PyMunkPredictor(TableSimPredictor):
+
+    def __init__(self, width, height, num_steps=10, **kwargs):
+        super(PyMunkPredictor, self).__init__(width, height, **kwargs)
+
+        self.table = sim_pymunk.AirHockeyTable(width, height)
+        self.num_steps = num_steps
 
     def predicted_path(self):
 
@@ -137,31 +171,13 @@ class TableSimPredictor(PuckPredictor):
 
         return future_pos, future_vel
 
-    def intercept_point(self):
-        future_pos, future_vel = self.predicted_path()
-
-        i_point = None
-        for path in zip(future_pos[:-1], future_pos[1:]):
-            i_point = self.defense_circle.intersect(path[0], path[1])
-            if i_point:
-                break
-
-        return i_point
-
     def draw(self, frame):
         'Draws table and puck future positions using last predicted paths'
 
-        # Draw predicted path
-        for path in zip(self.pred_path[:-1], self.pred_path[1:]):
-            p1 = tuple([int(p) for p in path[0]])
-            p2 = tuple([int(p) for p in path[1]])
-            cv2.line(frame,p1,p2,(255,0,0),5)
+        super(PyMunkPredictor, self).draw(frame)
 
         # Draw simulated universe walls
         for line in self.table.walls:
             linea = tuple([int(a) for a in line.a])
             lineb = tuple([int(b) for b in line.b])
             cv2.rectangle(frame, linea, lineb, (255,0,0))
-
-        # Draw defense circle
-        self.defense_circle.draw(frame, (255, 0, 0))

@@ -3,7 +3,7 @@ import cv2
 import numpy as np
 
 from .interface import CaptureSource, ObjectDetector
-from .sim import AirHockeyGame
+from .sim_pymunk import AirHockeyGame
 
 MASK_WIN_NAME = 'HHR - Mask'
 

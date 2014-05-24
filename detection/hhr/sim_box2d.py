@@ -262,7 +262,7 @@ class AirHockeyGame(AirHockeyTable):
         # generally best to keep the time step and iterations fixed.
         # See the manual (Section "Simulating the World") for further discussion
         # on these parameters and their implications.
-        self.world.Step(TIME_STEP, 8, 3)
+        self.world.Step(TIME_STEP, 6, 2)
 
         # Flip the screen and try to keep at the target FPS
         pygame.display.flip()

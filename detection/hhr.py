@@ -37,7 +37,7 @@ def main():
 
     gui.create_windows()
 
-    predictor = strategy.TableSimPredictor(args.capture_width, args.capture_height)
+    predictor = strategy.PyMunkPredictor(args.capture_width, args.capture_height)
 
     source = None
     controller = None
