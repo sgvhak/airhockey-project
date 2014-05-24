@@ -3,7 +3,6 @@ import cv2
 import numpy as np
 
 from .interface import CaptureSource, ObjectDetector
-from .sim_pymunk import AirHockeyGame
 
 MASK_WIN_NAME = 'HHR - Mask'
 
@@ -75,8 +74,8 @@ class CV2CaptureSource(CaptureSource):
         self.cap.release()
 
 class SimulatedCaptureSource(CaptureSource):
-    def __init__(self, width, height):
-        self.game = AirHockeyGame(width, height)
+    def __init__(self, game):
+        self.game = game
 
     def frame(self):
         self.game.process_frame()
