@@ -9,7 +9,7 @@ PUCK_RADIUS = 10
 def test_strategy_intercept_calc():
     pred = strategy.PyMunkPredictor(WIDTH, HEIGHT)
 
-    time_step = 0.1
+    time_step = cv2.getTickFrequency() * 0.1
     # [ puck-position, expected_intercept_point ]
     COORDS = [
         ((160,120), None),
