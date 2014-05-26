@@ -7,7 +7,7 @@ HEIGHT = 240
 PUCK_RADIUS = 10
 
 def test_strategy_intercept_calc():
-    pred = strategy.TableSimPredictor(WIDTH, HEIGHT)
+    pred = strategy.PyMunkPredictor(WIDTH, HEIGHT)
 
     time_step = 0.1
     # [ puck-position, expected_intercept_point ]
@@ -29,5 +29,8 @@ def test_strategy_intercept_calc():
         sim_time = time_step * step
         pred.add_puck_event(sim_time, pos, PUCK_RADIUS)
         i_point = pred.intercept_point()
-        assert (i_point is None and expected is None) or np.allclose(i_point, expected)
+        if i_point is None or expected is None:
+            assert i_point == expected
+        else:
+            np.allclose(i_point, expected)
 

@@ -47,7 +47,7 @@ class Circle(object):
             t1 = (-b + disc_sqrt) / (2*a)
             t2 = (-b - disc_sqrt) / (2*a)
 
-            # Minimum value is the closes, 
+            # Minimum value is the closest, 
             # only values of t between 0 and 1 lie
             # on the circle
             t = min(t1, t2)
