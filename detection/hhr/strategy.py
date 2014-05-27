@@ -194,10 +194,14 @@ class Box2dPredictor(TableSimPredictor):
         self.table = game_box2d.AirHockeyGame(width, height)
         self.num_steps = num_steps
 
+    def conv_pixelCoordToMeters(self, rect):
+        return map(lambda v: v / sim_box2d.PPM, rect)
+
     def predicted_path(self):
 
         puck = self.table.pucks[0]
-        puck.position = ( self.curr_pos[0] / sim_box2d.PPM, self.curr_pos[1] / sim_box2d.PPM )
+        puck.position = self.conv_pixelCoordToMeters(self.curr_pos) #( self.curr_pos[0] / sim_box2d.PPM, self.curr_pos[1] / sim_box2d.PPM )
+        print puck.position
 
         # Convert angle, speed averages tor regular floats, pymunk
         # doesn't seem to like numpy floats
