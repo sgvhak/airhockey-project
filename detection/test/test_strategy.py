@@ -5,17 +5,18 @@ import numpy as np
 WIDTH = 320
 HEIGHT = 240
 PUCK_RADIUS = 10
+PREDICTOR_NUM_STEPS = 10
 
 def test_pymunk_strategy_intercept_calc():
-    pred = strategy.PyMunkPredictor(WIDTH, HEIGHT)
+    pred = strategy.PyMunkPredictor(WIDTH, HEIGHT, PREDICTOR_NUM_STEPS)
     strategy_intercept_calc(pred)
 
 def test_box2d_strategy_intercept_calc():
-    pred = strategy.Box2dPredictor(WIDTH, HEIGHT)
+    pred = strategy.Box2dPredictor(WIDTH, HEIGHT, PREDICTOR_NUM_STEPS)
     strategy_intercept_calc(pred)
 
 def strategy_intercept_calc(pred):
-    time_step = cv2.getTickFrequency() * 0.1
+    time_step = 1.0 / PREDICTOR_NUM_STEPS
     # [ puck-position, expected_intercept_point ]
     COORDS = [
         ((160,120), None),
