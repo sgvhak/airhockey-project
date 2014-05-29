@@ -19,7 +19,8 @@ def calculate_speed_angle(pos1, pos2, time1, time2):
     """
     dy = pos2[1] - pos1[1]
     dx = pos2[0] - pos1[0]
-    dt = (time2 - time1) / cv2.getTickFrequency()
+    dt = time2 - time1
+    print dx, dy, dt
 
     angle = math.atan2(dy, dx)
     speed = math.sqrt(dx * dx + dy * dy) / dt if dt != 0 else 0
@@ -90,21 +91,22 @@ class TableSimPredictor(PuckPredictor):
         # Create defense circle located at center of right most goal
         self.defense_circle = Circle(width, height / 2, defense_radius)
 
-    def add_puck_event(self, tick, coords, radius):
+    def add_puck_event(self, time_sec, coords, radius):
 
         last_pos = self.curr_pos
         last_time = self.curr_time
 
         self.curr_pos = coords
-        self.curr_time = tick
+        self.curr_time = time_sec
 
-        if tick == 0:
+        if time_sec == 0:
             speed, angle = (0, 0)
         else:
             speed, angle = calculate_speed_angle(last_pos, self.curr_pos, last_time, self.curr_time)
 
-        self.speeds.add_value(speed)
-        self.angles.add_value(angle)
+            print "addpuck with speed", speed
+            self.speeds.add_value(speed)
+            self.angles.add_value(angle)
 
     @abstractmethod
     def predicted_path(self):
@@ -152,6 +154,7 @@ class PyMunkPredictor(TableSimPredictor):
         # doesn't seem to like numpy floats
         angle = float(self.angles.average)
         speed = float(self.speeds.average)
+        print "pymunk speed", speed
 
         impulse = speed * pymunk.Vec2d(1, 0).rotated(angle)
         puck.body.apply_impulse(impulse)
@@ -164,6 +167,7 @@ class PyMunkPredictor(TableSimPredictor):
             self.table.space.step(dt)
             future_pos.append(tuple(puck.body.position))
             future_vel.append(tuple(puck.body.velocity)) 
+            print "pos at t", dt * t, tuple(puck.body.position)
 
         # Remove the puck once the simulation is over
         self.table.remove_puck(puck)
@@ -194,19 +198,33 @@ class Box2dPredictor(TableSimPredictor):
         self.table = game_box2d.AirHockeyGame(width, height)
         self.num_steps = num_steps
 
-    def conv_pixelCoordToMeters(self, rect):
-        return map(lambda v: v / sim_box2d.PPM, rect)
+    def pixel_to_meter(self, value):
+        return value / sim_box2d.PPM
+
+    def meter_to_pixel(self, value):
+        return value * sim_box2d.PPM
+
+    def coord_pixel_to_meter(self, rect):
+        """ Convert pair of coordinates in pixels to equivalent in meters
+        :param rect: tuple of pixel values (x,y) """
+        return map(self.pixel_to_meter, rect)
+
+    def coord_meter_to_pixel(self, rect):
+        """ Convert pair of coordinates in meters to equivalent in pixels
+        :param rect: tuple of meter distances (x,y) """
+        return map(self.meter_to_pixel, rect)
 
     def predicted_path(self):
 
         puck = self.table.pucks[0]
-        puck.position = self.conv_pixelCoordToMeters(self.curr_pos) #( self.curr_pos[0] / sim_box2d.PPM, self.curr_pos[1] / sim_box2d.PPM )
+        puck.position = self.coord_pixel_to_meter(self.curr_pos)
         print puck.position
 
         # Convert angle, speed averages tor regular floats, pymunk
         # doesn't seem to like numpy floats
         angle = float(self.angles.average) 
-        speed = float(self.speeds.average) / sim_box2d.PPM
+        speed = self.pixel_to_meter(float(self.speeds.average))
+        print "box2d speed", speed, self.speeds.average
 
         impulse = speed * b2Rot(angle).x_axis
         puck.linearVelocity = b2Vec2(0, 0)
@@ -215,11 +233,13 @@ class Box2dPredictor(TableSimPredictor):
         # Simulate several steps into the future
         future_pos = []
         future_vel = []
-        dt = 1.0/10
+        dt = 1.0/self.num_steps
         for t in range(self.num_steps):
-            self.table.world.Step(dt, 6, 2)
-            p = puck.position
-            future_pos.append( (p[0] * sim_box2d.PPM, p[1] * sim_box2d.PPM) )
+            #self.table.world.Step(dt, 6, 2)
+            self.table.world.Step(dt, 10, 10)
+            pos_px = self.coord_meter_to_pixel(puck.position)
+            print "pos at t", dt * t, pos_px
+            future_pos.append(pos_px)
 
         self.pred_path = future_pos
         self.pred_vel = future_vel
@@ -237,3 +257,4 @@ class Box2dPredictor(TableSimPredictor):
             linea = tuple([int(a*sim_box2d.PPM) for a in vertices[0]])
             lineb = tuple([int(b*sim_box2d.PPM) for b in vertices[1]])
             cv2.rectangle(frame, linea, lineb, (255,0,0))
+

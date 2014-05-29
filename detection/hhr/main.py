@@ -21,7 +21,7 @@ def main_loop(detector, predictor, controller):
         # Predict movement and inform controller where to intercept
         if detect_res:
             coords, radius = detect_res 
-            predictor.add_puck_event(cv2.getTickCount(), coords, radius)
+            predictor.add_puck_event(cv2.getTickCount() / cv2.getTickFrequency(), coords, radius)
             i_point = predictor.intercept_point()
 
             if controller:
