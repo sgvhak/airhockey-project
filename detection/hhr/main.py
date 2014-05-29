@@ -10,7 +10,7 @@ NUM_TIME_RECORDS = 5
 def main_loop(detector, predictor, controller):
     time_avg = MovingAverage(NUM_TIME_RECORDS)
     while(True):
-        time_beg = cv2.getTickCount()
+        time_tick_beg = cv2.getTickCount()
 
         # Get frame which can be drawn on
         frame = detector.frame()
@@ -30,8 +30,8 @@ def main_loop(detector, predictor, controller):
         # Draw predictor information
         predictor.draw(frame)
 
-        time_end = (cv2.getTickCount() - time_beg) / cv2.getTickFrequency()
-        time_avg.add_value(time_end)
+        elapsed_time = (cv2.getTickCount() - time_tick_beg) / cv2.getTickFrequency()
+        time_avg.add_value(elapsed_time)
 
         # Write FPS to frame
         cv2.putText(frame, '%2.2f FPS' % (1/time_avg.average), (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (0,0,255))
