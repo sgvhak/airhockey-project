@@ -230,14 +230,17 @@ class Box2dPredictor(TableSimPredictor):
         impulse = speed * b2Rot(angle).x_axis * puck.mass   # impulse is Force * time with units are kg-m/s or N/s or similar.
         puck.linearVelocity = b2Vec2(0, 0)
         puck.ApplyLinearImpulse(impulse, puck.worldCenter, wake=True)
-        print "impulse", impulse, "linearVelocity", puck.linearVelocity, "linearVelocity*mass should equal impulse", puck.linearVelocity*puck.mass, "linearVelocity px/s", self.coord_meter_to_pixel(puck.linearVelocity)
+        print "impulse", impulse, "linearVelocity m/s", puck.linearVelocity, "puck mass", puck.mass, "linearVelocity px/s", self.coord_meter_to_pixel(puck.linearVelocity)
 
         # Simulate several steps into the future
         future_pos = []
         future_vel = []
         dt = 1.0/self.num_steps
         for t in range(self.num_steps):
+            vBefore = b2Vec2(puck.linearVelocity)
             self.table.world.Step(dt, 6, 2)
+            if (puck.linearVelocity - vBefore) != b2Vec2(0,0):
+                print "velocity change px/s", self.coord_meter_to_pixel(puck.linearVelocity - vBefore)
             pos_px = self.coord_meter_to_pixel(puck.position)
             print "pos at t", dt * t, pos_px, puck.position
             future_pos.append(pos_px)
