@@ -26,16 +26,22 @@ class AirHockeyTable(object):
 
         self.walls = self.world.CreateStaticBody(
                 shapes=[ 
+                        # top horizontal
                         b2EdgeShape(vertices=[b2Vec2(self.wt, self.wt) + self.offset, 
                                               b2Vec2(self.table_width-self.wt, self.wt) + self.offset]),
+                        # bottom horizontal
                         b2EdgeShape(vertices=[b2Vec2(self.wt, self.table_height-self.wt) + self.offset, 
                                               b2Vec2(self.table_width-self.wt, self.table_height-self.wt) + self.offset]),
+                        # left-top vertical
                         b2EdgeShape(vertices=[b2Vec2(self.wt, self.wt) + self.offset, 
                                               b2Vec2(self.wt, (self.table_height-self.gw)/2) + self.offset]),
+                        # left-bottom vertical
                         b2EdgeShape(vertices=[b2Vec2(self.wt, (self.table_height+self.gw)/2) + self.offset, 
                                               b2Vec2(self.wt, self.table_height-self.wt) + self.offset]),
+                        # right-top vertical
                         b2EdgeShape(vertices=[b2Vec2(self.table_width-self.wt, self.wt) + self.offset, 
                                               b2Vec2(self.table_width-self.wt, (self.table_height-self.gw)/2) + self.offset]),
+                        # right-bottom vertical
                         b2EdgeShape(vertices=[b2Vec2(self.table_width-self.wt, (self.table_height+self.gw)/2) + self.offset, 
                                               b2Vec2(self.table_width-self.wt, self.table_height-self.wt) + self.offset]),
                     ]
