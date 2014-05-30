@@ -20,7 +20,7 @@ def calculate_speed_angle(pos1, pos2, time1, time2):
     dy = pos2[1] - pos1[1]
     dx = pos2[0] - pos1[0]
     dt = time2 - time1
-    print dx, dy, dt
+    print "speed calc: dx,dy,dt", dx, dy, dt
 
     angle = math.atan2(dy, dx)
     speed = math.sqrt(dx * dx + dy * dy) / dt if dt != 0 else 0
@@ -104,7 +104,7 @@ class TableSimPredictor(PuckPredictor):
         else:
             speed, angle = calculate_speed_angle(last_pos, self.curr_pos, last_time, self.curr_time)
 
-            print "addpuck with speed", speed
+            print "addpuck with speed", speed, "at position", self.curr_pos
             self.speeds.add_value(speed)
             self.angles.add_value(angle)
 
@@ -197,12 +197,13 @@ class Box2dPredictor(TableSimPredictor):
         import game_box2d
         self.table = game_box2d.AirHockeyGame(width, height)
         self.num_steps = num_steps
+        self.pixels_per_meter = float(sim_box2d.PPM)
 
     def pixel_to_meter(self, value):
-        return value / sim_box2d.PPM
+        return value / self.pixels_per_meter
 
     def meter_to_pixel(self, value):
-        return value * sim_box2d.PPM
+        return round(value * self.pixels_per_meter)
 
     def coord_pixel_to_meter(self, rect):
         """ Convert pair of coordinates in pixels to equivalent in meters
@@ -218,7 +219,7 @@ class Box2dPredictor(TableSimPredictor):
 
         puck = self.table.pucks[0]
         puck.position = self.coord_pixel_to_meter(self.curr_pos)
-        print puck.position
+        print "puck pos, mass", puck.position, puck.mass
 
         # Convert angle, speed averages tor regular floats, pymunk
         # doesn't seem to like numpy floats
@@ -226,23 +227,26 @@ class Box2dPredictor(TableSimPredictor):
         speed = self.pixel_to_meter(float(self.speeds.average))
         print "box2d speed", speed, self.speeds.average
 
-        impulse = speed * b2Rot(angle).x_axis
+        impulse = speed * b2Rot(angle).x_axis * puck.mass   # impulse is Force * time with units are kg-m/s or N/s or similar.
         puck.linearVelocity = b2Vec2(0, 0)
         puck.ApplyLinearImpulse(impulse, puck.worldCenter, wake=True)
+        print "impulse", impulse, "linearVelocity", puck.linearVelocity, "linearVelocity*mass should equal impulse", puck.linearVelocity*puck.mass, "linearVelocity px/s", self.coord_meter_to_pixel(puck.linearVelocity)
 
         # Simulate several steps into the future
         future_pos = []
         future_vel = []
         dt = 1.0/self.num_steps
         for t in range(self.num_steps):
-            #self.table.world.Step(dt, 6, 2)
-            self.table.world.Step(dt, 10, 10)
+            self.table.world.Step(dt, 6, 2)
             pos_px = self.coord_meter_to_pixel(puck.position)
-            print "pos at t", dt * t, pos_px
+            print "pos at t", dt * t, pos_px, puck.position
             future_pos.append(pos_px)
+            future_vel.append(self.coord_meter_to_pixel(puck.linearVelocity))
 
         self.pred_path = future_pos
         self.pred_vel = future_vel
+
+        print future_pos, future_vel
 
         return future_pos, future_vel
 
@@ -254,7 +258,7 @@ class Box2dPredictor(TableSimPredictor):
         # Draw simulated universe walls
         for fixture in self.table.walls.fixtures:
             vertices = fixture.shape.vertices
-            linea = tuple([int(a*sim_box2d.PPM) for a in vertices[0]])
-            lineb = tuple([int(b*sim_box2d.PPM) for b in vertices[1]])
+            linea = tuple([int(self.meter_to_pixel(a)) for a in vertices[0]])
+            lineb = tuple([int(self.meter_to_pixel(b)) for b in vertices[1]])
             cv2.rectangle(frame, linea, lineb, (255,0,0))
 
