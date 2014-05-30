@@ -225,12 +225,12 @@ class Box2dPredictor(TableSimPredictor):
         # doesn't seem to like numpy floats
         angle = float(self.angles.average) 
         speed = self.pixel_to_meter(float(self.speeds.average))
-        print "box2d speed m/s, px/s", speed, self.speeds.average
+        print "box2d speed", speed, "m/s ==", self.speeds.average, "px/s"
 
         impulse = speed * b2Rot(angle).x_axis * puck.mass   # impulse is Force * time with units are kg-m/s or N/s or similar.
         puck.linearVelocity = b2Vec2(0, 0)
         puck.ApplyLinearImpulse(impulse, puck.worldCenter, wake=True)
-        print "impulse", impulse, "linearVelocity m/s", puck.linearVelocity, "puck mass", puck.mass, "linearVelocity px/s", self.coord_meter_to_pixel(puck.linearVelocity)
+        print "impulse", impulse, "linearVelocity (m/s)", puck.linearVelocity, "linearVelocity (px/s)", self.coord_meter_to_pixel(puck.linearVelocity), "puck mass", puck.mass
 
         # Simulate several steps into the future
         future_pos = []
