@@ -13,7 +13,7 @@ from .calc import MovingAverage
 
 logging.basicConfig()
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.DEBUG)
+logger.setLevel(logging.INFO)
 
 
 def calculate_speed_angle(pos1, pos2, time1, time2):

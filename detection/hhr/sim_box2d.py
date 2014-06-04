@@ -2,7 +2,8 @@
 
 from Box2D import *
 
-PPM=275 # pixels per meter
+# PPM based on table size of 46 x 23 inches with a camera frame size of 320 x 240 pixels.
+PPM=273.87 # pixels per meter
 #PPM=7 # old scaling
 
 class AirHockeyTable(object):
@@ -14,9 +15,12 @@ class AirHockeyTable(object):
         # Initialize world
         self.world = b2World(gravity = (0, 0))
 
-        self.offset = b2Vec2(0, self.height / 6)
-        self.table_height = int(self.height / 1.5)
-        self.table_width = self.width
+        # Table dimensions 23x46 inches converted to meters.
+        self.table_height = 0.5842 # Meters
+        self.table_width = 1.1684  # Meters
+
+        # Center the table within the camera field
+        self.offset = b2Vec2((self.width - self.table_width) / 2,(self.height - self.table_height) / 2)
 
         # Wall thickness 1"
         self.wt = 7.0 / PPM
