@@ -1,5 +1,6 @@
 import math
 from abc import abstractmethod
+import logging
 
 import cv2
 import pymunk
@@ -9,6 +10,11 @@ from Box2D import *
 import sim_pymunk, sim_box2d
 from .interface import PuckPredictor
 from .calc import MovingAverage
+
+logging.basicConfig()
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
+
 
 def calculate_speed_angle(pos1, pos2, time1, time2):
     """
@@ -20,7 +26,7 @@ def calculate_speed_angle(pos1, pos2, time1, time2):
     dy = pos2[1] - pos1[1]
     dx = pos2[0] - pos1[0]
     dt = time2 - time1
-    print "speed calc: dx,dy,dt", dx, dy, dt
+    logger.debug("speed calc: dx,dy,dt=%d,%d,%d", dx, dy, dt)
 
     angle = math.atan2(dy, dx)
     speed = math.sqrt(dx * dx + dy * dy) / dt if dt != 0 else 0
@@ -104,7 +110,7 @@ class TableSimPredictor(PuckPredictor):
         else:
             speed, angle = calculate_speed_angle(last_pos, self.curr_pos, last_time, self.curr_time)
 
-            print "addpuck with speed", speed, "at position", self.curr_pos
+            logger.debug("addpuck at position %s with speed %s", self.curr_pos, speed)
             self.speeds.add_value(speed)
             self.angles.add_value(angle)
 
@@ -154,7 +160,7 @@ class PyMunkPredictor(TableSimPredictor):
         # doesn't seem to like numpy floats
         angle = float(self.angles.average)
         speed = float(self.speeds.average)
-        print "pymunk speed", speed
+        logger.debug("pymunk speed %f", speed)
 
         impulse = speed * pymunk.Vec2d(1, 0).rotated(angle)
         puck.body.apply_impulse(impulse)
@@ -167,7 +173,7 @@ class PyMunkPredictor(TableSimPredictor):
             self.table.space.step(dt)
             future_pos.append(tuple(puck.body.position))
             future_vel.append(tuple(puck.body.velocity)) 
-            print "pos at t", dt * t, tuple(puck.body.position)
+            logger.debug("pos at t %s: %s", dt * t, tuple(puck.body.position))
 
         # Remove the puck once the simulation is over
         self.table.remove_puck(puck)
@@ -219,18 +225,19 @@ class Box2dPredictor(TableSimPredictor):
 
         puck = self.table.pucks[0]
         puck.position = self.coord_pixel_to_meter(self.curr_pos)
-        print "puck pos, mass", puck.position, puck.mass
+        logger.debug("predicting with puck initial pos=%s, mass=%s", puck.position, puck.mass)
 
         # Convert angle, speed averages tor regular floats, pymunk
         # doesn't seem to like numpy floats
         angle = float(self.angles.average) 
         speed = self.pixel_to_meter(float(self.speeds.average))
-        print "box2d speed", speed, "m/s ==", self.speeds.average, "px/s"
+        logger.debug("box2d speed %s m/s == %s px/s", speed, self.speeds.average)
 
         impulse = speed * b2Rot(angle).x_axis * puck.mass   # impulse is Force * time with units are kg-m/s or N/s or similar.
+        #puck.linearVelocity = speed * b2Rot(angle).x_axis
         puck.linearVelocity = b2Vec2(0, 0)
         puck.ApplyLinearImpulse(impulse, puck.worldCenter, wake=True)
-        print "impulse", impulse, "linearVelocity (m/s)", puck.linearVelocity, "linearVelocity (px/s)", self.coord_meter_to_pixel(puck.linearVelocity), "puck mass", puck.mass
+        logger.debug("impulse %s, linearVelocity %s (m/s) %s (px/s), puck mass %s", impulse, puck.linearVelocity, self.coord_meter_to_pixel(puck.linearVelocity), puck.mass)
 
         # Simulate several steps into the future
         future_pos = []
@@ -240,17 +247,18 @@ class Box2dPredictor(TableSimPredictor):
             vBefore = b2Vec2(puck.linearVelocity)
             self.table.world.Step(dt, 6, 2)
             if (puck.linearVelocity - vBefore) != b2Vec2(0,0):
-                print "velocity change px/s", self.coord_meter_to_pixel(puck.linearVelocity - vBefore)
+                logger.debug("velocity change %s px/s", self.coord_meter_to_pixel(puck.linearVelocity - vBefore))
             pos_px = self.coord_meter_to_pixel(puck.position)
-            print "pos at t", dt * t, pos_px, puck.position
+            logger.debug("t = %f pos = %s px == %s m vel = %s", dt * t, pos_px, puck.position, puck.linearVelocity)
+            #self.table.world.Dump()
             future_pos.append(pos_px)
             future_vel.append(self.coord_meter_to_pixel(puck.linearVelocity))
 
         self.pred_path = future_pos
         self.pred_vel = future_vel
 
-        print "futurepos", future_pos
-        print "futurevel", future_vel
+        logger.debug("futurepos %s", future_pos)
+        logger.debug("futurevel %s", future_vel)
 
         return future_pos, future_vel
 
