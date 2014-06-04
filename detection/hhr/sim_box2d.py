@@ -2,8 +2,8 @@
 
 from Box2D import *
 
-#PPM=275 # pixels per meter
-PPM=7 # old scaling
+PPM=275 # pixels per meter
+#PPM=7 # old scaling
 
 class AirHockeyTable(object):
 
