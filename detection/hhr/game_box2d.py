@@ -45,6 +45,9 @@ class AirHockeyGame(AirHockeyTable):
     def __init__(self, screen_width, screen_height):
         super(AirHockeyGame, self).__init__(screen_width, screen_height)
 
+        # reduce threshold at which collision is treated as inelastic for performance reasons.
+        Box2D.b2_velocityThreshold = 0.001
+
         self.screen_width = screen_width
         self.screen_height = screen_height
 
@@ -64,10 +67,18 @@ class AirHockeyGame(AirHockeyTable):
             b2LoopShape: self.draw_loop,
         }
 
-    def add_player(self, mass=3.0, radius=11.0):
+    def add_player(self, mass=3.0, radius=11.0, on_left = False):
         radius_meters = radius / PPM
-        density = mass / (math.pi * radius * radius)
-        player = self.add_circle(b2Vec2(self.table_width - self.table_width / 8, self.table_height / 2) + self.offset, radius_meters, density=density) 
+        density = mass / (math.pi * radius_meters * radius_meters)  # for equiv to pymunk mass should area be computed from px or meters?
+
+        if on_left:
+            xpos = self.table_width / 8
+        else:
+            xpos = self.table_width - self.table_width / 8
+
+        ypos = self.table_height / 2
+        
+        player = self.add_circle(b2Vec2(xpos, ypos) + self.offset, radius_meters, density=density) 
         self.players.append(player)
         return player
 
@@ -115,12 +126,12 @@ class AirHockeyGame(AirHockeyTable):
         if self.mouseJoint:
             self.mouseJoint.target = p
 
-    def to_world(self, pos):
-        """Convert from screen coordinates to model coordinates :param pos: tuple of x and y coordinates"""
-        x, y = pos
-        return b2Vec2(x / PPM, y / PPM)
+    def to_world(self, point):
+        """Convert from screen coordinates to model coordinates"""
+        return b2Vec2(point.x / PPM, point.y / PPM)
 
     def to_screen(self, point):
+        """Convert from model coordinates to screen coordinates"""
         return ( int(point.x * PPM), int(point.y * PPM) )
 
     def fix_vertices(self, vertices):
@@ -162,15 +173,15 @@ class AirHockeyGame(AirHockeyTable):
                 # The user closed the window or pressed escape
                 return False
             elif event.type == MOUSEBUTTONDOWN:
-                p = self.to_world(event.pos)
+                p = self.to_world(b2Vec2(event.pos))
                 if event.button == 1: # left
                     mods = pygame.key.get_mods()
                     self.add_mouse_joint(p)
             elif event.type == MOUSEBUTTONUP:
-                p = self.to_world(event.pos)
+                p = self.to_world(b2Vec2(event.pos))
                 self.remove_mouse_joint(p)
             elif event.type == MOUSEMOTION:
-                p = self.to_world(event.pos)
+                p = self.to_world(b2Vec2(event.pos))
                 self.update_mouse_joint(p)
 
         # Clear the frame

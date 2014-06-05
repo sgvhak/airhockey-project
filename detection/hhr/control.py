@@ -6,7 +6,7 @@ class PyMunkGameController(RobotController):
 
     def __init__(self, game):
         self.game = game
-        self.control_player = self.game.add_player(mass=1e10)
+        self.control_player = self.game.add_player(mass=1e10, on_left=True)
 
     def move_to(self, intercept_point):
         paddle = self.control_player.body
@@ -19,7 +19,7 @@ class Box2dGameController(RobotController):
     def __init__(self, game):
         self.game = game
         #self.game.remove_player(self.game.players[0])
-        self.control_player = self.game.add_player(mass=1e10)
+        self.control_player = self.game.add_player(mass=1e10, on_left=True)
 
     def move_to(self, intercept_point):
         paddle = self.control_player

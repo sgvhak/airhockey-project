@@ -44,10 +44,13 @@ class AirHockeyGame(AirHockeyTable):
         super(AirHockeyGame, self).remove_puck(puck)
         self.pucks.remove(puck)
 
-    def add_player(self, mass=3, radius=11):
+    def add_player(self, mass=3, radius=11, on_left=False):
         inertia = pymunk.moment_for_circle(mass, 0, radius, (0,0))
         player_body = pymunk.Body(mass, inertia)
-        player_body.position=(self.width-self.width/8, self.height/2)
+        if on_left:
+            player_body.position=(self.width/8, self.height/2)
+        else:
+            player_body.position=(self.width-self.width/8, self.height/2)
 
         player_shape = pymunk.Circle(player_body, radius, (0,0))
         player_shape.elasticity = 0.95

@@ -234,6 +234,7 @@ class Box2dPredictor(TableSimPredictor):
         logger.debug("box2d speed %s m/s == %s px/s", speed, self.speeds.average)
 
         impulse = speed * b2Rot(angle).x_axis * puck.mass   # impulse is Force * time with units are kg-m/s or N/s or similar.
+        ## Aside: applying impulse and applying a linearVelocity are almost (some wake condition check differs) entirely synonymous... see box2d code.
         #puck.linearVelocity = speed * b2Rot(angle).x_axis
         puck.linearVelocity = b2Vec2(0, 0)
         puck.ApplyLinearImpulse(impulse, puck.worldCenter, wake=True)
@@ -247,7 +248,7 @@ class Box2dPredictor(TableSimPredictor):
             vBefore = b2Vec2(puck.linearVelocity)
             self.table.world.Step(dt, 6, 2)
             if puck.linearVelocity != vBefore:
-                logger.debug("velocity change %s px/s", self.coord_meter_to_pixel(puck.linearVelocity - vBefore))
+                logger.debug("velocity change %s px/s", self.coord_meter_to_pixel(b2Vec2(puck.linearVelocity) - vBefore))
             pos_px = self.coord_meter_to_pixel(puck.position)
             logger.debug("t = %f pos = %s px == %s m vel = %s", dt * t, pos_px, puck.position, puck.linearVelocity)
             #self.table.world.Dump()
