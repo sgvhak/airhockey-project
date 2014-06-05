@@ -1,5 +1,7 @@
 #!/usr/bin/env python
 
+import math
+
 import pygame
 from pygame.locals import *
 from pygame.color import *
@@ -62,8 +64,10 @@ class AirHockeyGame(AirHockeyTable):
             b2LoopShape: self.draw_loop,
         }
 
-    def add_player(self, density=3.0):
-        player = self.add_circle(b2Vec2(self.table_width - self.table_width / 8, self.table_height / 2) + self.offset, 11.0 / PPM, density=density) 
+    def add_player(self, mass=3.0, radius=11.0):
+        radius_meters = radius / PPM
+        density = mass / (math.pi * radius * radius)
+        player = self.add_circle(b2Vec2(self.table_width - self.table_width / 8, self.table_height / 2) + self.offset, radius_meters, density=density) 
         self.players.append(player)
         return player
 
@@ -111,7 +115,9 @@ class AirHockeyGame(AirHockeyTable):
         if self.mouseJoint:
             self.mouseJoint.target = p
 
-    def to_world(self, x, y):
+    def to_world(self, pos):
+        """Convert from screen coordinates to model coordinates :param pos: tuple of x and y coordinates"""
+        x, y = pos
         return b2Vec2(x / PPM, y / PPM)
 
     def to_screen(self, point):
@@ -156,15 +162,15 @@ class AirHockeyGame(AirHockeyTable):
                 # The user closed the window or pressed escape
                 return False
             elif event.type == MOUSEBUTTONDOWN:
-                p = self.to_world(*event.pos)
+                p = self.to_world(event.pos)
                 if event.button == 1: # left
                     mods = pygame.key.get_mods()
                     self.add_mouse_joint(p)
             elif event.type == MOUSEBUTTONUP:
-                p = self.to_world(*event.pos)
+                p = self.to_world(event.pos)
                 self.remove_mouse_joint(p)
             elif event.type == MOUSEMOTION:
-                p = self.to_world(*event.pos)
+                p = self.to_world(event.pos)
                 self.update_mouse_joint(p)
 
         # Clear the frame

@@ -71,15 +71,15 @@ class AirHockeyGame(AirHockeyTable):
         for line in self.walls:
             pv1 = line.body.position + line.a.rotated(line.body.angle)
             pv2 = line.body.position + line.b.rotated(line.body.angle)
-            p1 = self.to_pygame(pv1)
-            p2 = self.to_pygame(pv2)
+            p1 = self.to_world(pv1)
+            p2 = self.to_world(pv2)
             pygame.draw.lines(self.screen, THECOLORS["black"], False, [p1,p2])
             
     def render(self):
         running = True
 
         mpos = pygame.mouse.get_pos()
-        self.mouse_body.position = self.from_pygame( Vec2d(mpos) )
+        self.mouse_body.position = self.to_screen( Vec2d(mpos) )
         self.mouse_body.angle = 0
         self.mouse_body.angular_velocity = 0
 
@@ -89,7 +89,7 @@ class AirHockeyGame(AirHockeyTable):
             elif event.type == KEYDOWN and event.key == K_ESCAPE:
                 running = False
             elif event.type == MOUSEBUTTONDOWN and event.button == 1: # LMB
-                #selected = space.point_query_first(self.from_pygame(Vec2d(mpos)))
+                #selected = space.point_query_first(self.to_screen(Vec2d(mpos)))
                 #if selected != None:
                 p1_body = self.players[0].body
                 p1_body.position = self.mouse_body.position
@@ -108,7 +108,7 @@ class AirHockeyGame(AirHockeyTable):
         self.draw_table()
 
         for puck in self.pucks:
-            p = self.to_pygame(puck.body.position)
+            p = self.to_world(puck.body.position)
 
             if p[0] < 0 or p[0]>self.width:
                 self.remove_puck(puck)
@@ -119,7 +119,7 @@ class AirHockeyGame(AirHockeyTable):
         for p_shape in self.players:
             p_body = p_shape.body
             p_body.angular_velocity = 0
-            p = self.to_pygame(p_body.position)
+            p = self.to_world(p_body.position)
             pygame.draw.circle(self.screen, THECOLORS["darkgreen"], p, int(p_shape.radius), 0)
             pygame.draw.circle(self.screen, THECOLORS["black"], p, int(p_shape.radius+1), 2)
             pygame.draw.circle(self.screen, THECOLORS["black"], p, int(p_shape.radius/2), 1)
@@ -136,13 +136,13 @@ class AirHockeyGame(AirHockeyTable):
 
         return running
 
-    def to_pygame(self, p):
-        """Small hack to convert pymunk to pygame coordinates"""
-        return int(p.x), int(-p.y+self.height)
+    def to_world(self, p):
+        """Small hack to convert pymunk to pygame coordinates. (formerly to_pygame)"""
+        return int(p.x), int(-p.y+self.height)  # invert the y axis
 
-    def from_pygame(self, p):
-        """Small hack to convert pymunk to pygame coordinates"""
-        return int(p.x), int(-p.y+self.height)
+    def to_screen(self, p):
+        """Small hack to convert pygame to pymunk coordinates. (formerly from_pygame)"""
+        return int(p.x), int(-p.y+self.height)  # invert the y axis
 
     def get_frame(self):
         frame = np.fromstring(pygame.image.tostring(self.screen, 'RGB'), dtype=np.uint8).reshape((self.height, self.width, 3))
