@@ -13,7 +13,7 @@ from .calc import MovingAverage
 
 logging.basicConfig()
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.INFO)
+logger.setLevel(logging.DEBUG)
 
 
 def calculate_speed_angle(pos1, pos2, time1, time2):
@@ -246,7 +246,7 @@ class Box2dPredictor(TableSimPredictor):
         for t in range(self.num_steps):
             vBefore = b2Vec2(puck.linearVelocity)
             self.table.world.Step(dt, 6, 2)
-            if (puck.linearVelocity - vBefore) != b2Vec2(0,0):
+            if puck.linearVelocity != vBefore:
                 logger.debug("velocity change %s px/s", self.coord_meter_to_pixel(puck.linearVelocity - vBefore))
             pos_px = self.coord_meter_to_pixel(puck.position)
             logger.debug("t = %f pos = %s px == %s m vel = %s", dt * t, pos_px, puck.position, puck.linearVelocity)
