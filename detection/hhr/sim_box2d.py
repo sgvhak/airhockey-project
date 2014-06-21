@@ -2,8 +2,10 @@
 
 from Box2D import *
 
+# If the puck features is too small, the physics become distorted.  So scale by a factor.
+SCALE_FACTOR = 10
 # PPM based on table size of 46 x 23 inches with a camera frame size of 320 x 240 pixels.
-PPM=273.87 # pixels per meter
+PPM=273.87 / SCALE_FACTOR # pixels per meter
 #PPM=7 # old scaling
 
 class AirHockeyTable(object):
@@ -16,8 +18,8 @@ class AirHockeyTable(object):
         self.world = b2World(gravity = (0, 0))
 
         # Table dimensions 23x46 inches converted to meters.
-        self.table_height = 0.5842 # Meters
-        self.table_width = 1.1684  # Meters
+        self.table_height = 0.5842 * SCALE_FACTOR  # Meters
+        self.table_width = 1.1684  * SCALE_FACTOR  # Meters
 
         # Center the table within the camera field
         self.offset = b2Vec2((self.width - self.table_width) / 2,(self.height - self.table_height) / 2)
