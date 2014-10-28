@@ -16,15 +16,22 @@ MalletHandle_d=32.5; //tapers to 35.5 at base
 MalletHandleTop_r=16.25;
 
 kBoltCircle23_d=66.8;
-kMotor_y=kBoltCircle23_d/2+10;
-kTable_w=100;
+//kMotor_y=kBoltCircle23_d/2+10;
+kMotor_y=kBoltCircle23_d/2;
+kTable_w=584.2;
+kTable_l=584.2;
 kBeltCL=10.4;
 kYCarrage_L=80;
 kBracket_r=5;
 
+kBracket_L=100;
+
 // ***** for STL output *****
 
 //rotate([0,180,0]) MotorBracketS();  // right motor bracket
+
+rotate([0,90,0]) rotate([0,180,0]) MotorBracket();
+translate([55,135,0]) rotate([0,90,0]) rotate([0,180,0]) mirror([0,1,0]) MotorBracket();
 
 //rotate([0,180,0]) mirror([1,0,0]) MotorBracketS();  // left motor bracket
 
@@ -32,29 +39,72 @@ kBracket_r=5;
 
 //XCarrage(); // X carrage print 1
 
+//rotate([0,90,0]) rotate([0,180,0]) IdlePulleyBracket();
+//translate([70,85,0]) rotate([0,90,0]) rotate([0,180,0]) mirror([0,1,0]) IdlePulleyBracket();
+
 // *********************************
-MotorBracketS();
-translate([kSidePulleyCL,kMotor_y,kBeltCL]) color("Red") Pulley();
+//Carage();
+//ShowAll();
+
+//MotorBracketS();
+//translate([kSidePulleyCL,kMotor_y,kBeltCL]) color("Red") Pulley();
 
 //mirror([1,0,0]) translate([kTable_w,0,0]) {
 //	MotorBracketS();
 //	translate([kSidePulleyCL,kMotor_y,kBeltCL]) color("Red") Pulley();}
 
-translate([0,400,0]) mirror([0,1,0]) {
-	IdlePulleyBracketS();
-	translate([kSidePulleyCL,15,kBeltCL]) color("Red") Pulley();}
+//translate([0,400,0]) mirror([0,1,0]) {
+//	IdlePulleyBracketS();
+//	translate([kSidePulleyCL,15,kBeltCL]) color("Red") Pulley();}
 
 //translate([0,400,0]) mirror([0,1,0]) mirror([1,0,0]) translate([kTable_w,0,0]) {
 //	IdlePulleyBracketS();
 //	translate([kSidePulleyCL,15,kBeltCL]) color("Red") Pulley();}
 
-translate([0,150,0]) {
-		Carage();
-	translate([kSidePulleyCL-kPulley_d/2-kBackRoller_d/2,kBracket_r+3,kBeltCL]) BackIdleRoller();
-	translate([kSidePulleyCL-kPulley_d/2-kBackRoller_d/2,kYCarrage_L-kBracket_r-3,kBeltCL]) BackIdleRoller();
-	}
+//translate([0,150,0]) {
+//		Carage();
+//	translate([kSidePulleyCL-kPulley_d/2-kBackRoller_d/2,kBracket_r+3,kBeltCL]) BackIdleRoller();
+//	translate([kSidePulleyCL-kPulley_d/2-kBackRoller_d/2,kYCarrage_L-kBracket_r-3,kBeltCL]) BackIdleRoller();
+//	}
 //translate([0,150,0]) mirror([1,0,0]) translate([kTable_w,0,0]) Carage();
-translate([-82,150,0]) XCarrage();
+//translate([-82,150,0]) XCarrage();
+
+kRod_r=3.2;
+
+module ShowAll(){
+	
+	translate([-10,0,0]){
+	MotorBracket();
+	translate([kSidePulleyCL,kMotor_y,kBeltCL]) color("Red") Pulley();}
+
+	translate([10,0,0]){
+	mirror([1,0,0]) translate([kTable_w,0,0]) {
+		MotorBracket();
+		translate([kSidePulleyCL,kMotor_y,kBeltCL]) color("Red") Pulley();}}
+
+	translate([-10,kTable_l+kBracket_L*2-12.7,0]) mirror([0,1,0]) {
+		IdlePulleyBracket();
+		translate([kRodOffset_X,100-15-12.7,kRod_r])
+			rotate([-90,0,0]) color("Red") cylinder(r=kRod_r,h=609.6);
+		translate([kSidePulleyCL,15,kBeltCL]) color("Red") Pulley();}
+
+	translate([10,kTable_l+kBracket_L*2-12.7,0]) mirror([0,1,0]) mirror([1,0,0]) translate([kTable_w,0,0]) {
+		IdlePulleyBracket();
+		translate([kRodOffset_X,100-15-12.7,kRod_r])
+			rotate([-90,0,0]) color("Red") cylinder(r=kRod_r,h=609.6);
+		translate([kSidePulleyCL,15,kBeltCL]) color("Red") Pulley();}
+
+	translate([-10,150,0]) {
+		Carage();
+		translate([kSidePulleyCL-kPulley_d/2-kBackRoller_d/2,kBracket_r+3,kBeltCL]) BackIdleRoller();
+		translate([kSidePulleyCL-kPulley_d/2-kBackRoller_d/2,kYCarrage_L-kBracket_r-3,kBeltCL]) BackIdleRoller();
+		translate([10+12.7,60,kRod_r])
+			rotate([0,-90,0]) color("Red") cylinder(r=kRod_r,h=609.6);
+		}
+	translate([10,150,0]) mirror([1,0,0]) translate([kTable_w,0,0]) Carage();
+	translate([-82,150,0]) XCarrage();
+
+}
 
 rSetScrew8=1.8; // #8-32 threaded hole
 rScrew8Clear=2.2; // #8-32 clearance hole
@@ -91,44 +141,84 @@ module Mema23Bolts(){
 
 //Mema23Bolts();
 
-kRod_r=3.2;
 
 
 kRodOffset_X=30;
 kSidePulleyCL=45;
 kPulley_d=70;
 kPulley_h=16;
+kXRod_X=10;
 
 module Pulley(){
   cylinder(r=kPulley_d/2,h=kPulley_h,center=true);
 } // Pulley
 
+module Gusset(){
+		hull(){
+			translate([5,0,-5]) rotate([90,0,0]) cylinder(r=5,h=8);
+			translate([5,0,-25]) rotate([90,0,0]) cylinder(r=5,h=8);
+			translate([25,0,-5]) rotate([90,0,0]) cylinder(r=5,h=8);
+		} // hull
+} // Gusset
+
 module MotorBracket(){
-	kBracket_L=100;
+	
 	kBracket_H=50;
-	kBracket_w=70;
+	kBracket_w=80;
 	kBracket_r=5;
 	kMBolt_r=3;
 	kMotorBoss_r=19.1;
 
+	kMountingPlate_L=60;
+	kMountingPlate_H=40;
+
 	// mounting plate
+
+translate([10,70,0])
 	difference(){
-		translate([0,0,-kBracket_H]) cube([10,kBracket_L,kBracket_H]);
+		
+		//translate([0,0,-kBracket_H]) cube([10,kMountingPlate_L,kBracket_H]);
+
+		hull(){
+		translate([0,0,-kMountingPlate_H+5]) rotate([0,90,0])
+			cylinder(r=5,h=10);
+		translate([0,kMountingPlate_L,-kMountingPlate_H+5]) rotate([0,90,0])
+			cylinder(r=5,h=10);
+		translate([0,0,-5]) rotate([0,90,0])
+			cylinder(r=5,h=10);
+		translate([0,kMountingPlate_L,-20]) rotate([0,90,0])
+			cylinder(r=5,h=10);
+		}
+		// mounting holes
+		//translate([10-0.05,kBracket_L/2-kBracket_L/4,-kBracket_H/2]) rotate([0,90,0])
+		//	cylinder(r=kMBolt_r,h=20);
+		//translate([10-0.05,kBracket_L/2+kBracket_L/4,-kBracket_H/2]) rotate([0,90,0])
+		//	cylinder(r=kMBolt_r,h=20);
 
 		// mounting holes
-		translate([-0.05,kBracket_L/2-kBracket_L/4,-kBracket_H/2]) rotate([0,90,0])
+		translate([-0.05,kMountingPlate_L/2-kMountingPlate_L/3,-5-kMountingPlate_H/3]) rotate([0,90,0])
 			cylinder(r=kMBolt_r,h=20);
-		translate([-0.05,kBracket_L/2+kBracket_L/4,-kBracket_H/2]) rotate([0,90,0])
+		translate([-0.05,kMountingPlate_L/2+kMountingPlate_L/3,-5-kMountingPlate_H/3]) rotate([0,90,0])
+			cylinder(r=kMBolt_r,h=20);
+		translate([-0.05,kMountingPlate_L/2-kMountingPlate_L/3,-5-kMountingPlate_H+kMountingPlate_H/3]) rotate([0,90,0])
+			cylinder(r=kMBolt_r,h=20);
+		translate([-0.05,kMountingPlate_L/2+kMountingPlate_L/3,-5-kMountingPlate_H+kMountingPlate_H/3]) rotate([0,90,0])
 			cylinder(r=kMBolt_r,h=20);
 
 	} // diff
+
+	//Gussets
+	translate([10,73,0])	Gusset();
+	translate([10,100,0])	Gusset();
 
 	// motor mount
 	difference(){
 		//translate([0,0,-10]) cube([kBracket_w,kBracket_L,10]);
 		
 		hull(){
-			translate([0,0,-10]) cube([1,kBracket_L,10]);
+			translate([10,kBracket_L-10,-10]) cube([1,10,10]);
+			translate([10+kBracket_r,kBracket_r,-10])
+				cylinder(r=kBracket_r,h=10);
 			translate([kBracket_w-kBracket_r,kBracket_r,-10])
 				cylinder(r=kBracket_r,h=10);
 			translate([kBracket_w-kBracket_r,kBracket_L-kBracket_r,-10])
@@ -142,7 +232,7 @@ module MotorBracket(){
 	} // diff
 
 	
-	translate([kSidePulleyCL,kBoltCircle23_d/2,3]) color("Red") Pulley();
+	//translate([kSidePulleyCL,kBoltCircle23_d/2,3]) color("Red") Pulley();
 
 	// rod mount
 	difference(){
@@ -158,6 +248,9 @@ module MotorBracket(){
 
 } // MotorBracket
 
+//MotorBracket();
+
+
 
 module IdlePulleyBracket(){
 	kBracket_L=85;
@@ -170,12 +263,16 @@ module IdlePulleyBracket(){
 
 	// mounting plate
 	difference(){
-		translate([0,0,-kBracket_H]) cube([10,kBracket_L,kBracket_H]);
+		translate([kXRod_X,0,-kBracket_H]) cube([10,kBracket_L,kBracket_H]);
 
 		// mounting holes
-		translate([-0.05,kBracket_L/2-kBracket_L/4,-kBracket_H/2]) rotate([0,90,0])
+		translate([kXRod_X-0.05,kBracket_L/2-kBracket_L/4,-5-kBracket_H/3]) rotate([0,90,0])
 			cylinder(r=kMBolt_r,h=20);
-		translate([-0.05,kBracket_L/2+kBracket_L/4,-kBracket_H/2]) rotate([0,90,0])
+		translate([kXRod_X-0.05,kBracket_L/2+kBracket_L/4,-5-kBracket_H/3]) rotate([0,90,0])
+			cylinder(r=kMBolt_r,h=20);
+		translate([kXRod_X-0.05,kBracket_L/2-kBracket_L/4,-5-kBracket_H+kBracket_H/3]) rotate([0,90,0])
+			cylinder(r=kMBolt_r,h=20);
+		translate([kXRod_X-0.05,kBracket_L/2+kBracket_L/4,-5-kBracket_H+kBracket_H/3]) rotate([0,90,0])
 			cylinder(r=kMBolt_r,h=20);
 
 	} // diff
@@ -184,7 +281,7 @@ module IdlePulleyBracket(){
 	difference(){
 		
 		hull(){
-			translate([0,0,-10]) cube([1,kBracket_L,10]);
+			translate([kXRod_X,0,-10]) cube([1,kBracket_L,10]);
 			translate([kBracket_w-kBracket_r,kBracket_r,-10])
 				cylinder(r=kBracket_r,h=10);
 			translate([kBracket_w-kBracket_r,kBracket_L-kBracket_r,-10])
@@ -196,7 +293,8 @@ module IdlePulleyBracket(){
 			BoltHole8();
 	} // diff
 
-	translate([kSidePulleyCL,15,3]) color("Red") Pulley();
+	//translate([kRodOffset_X,kBracket_L,kRod_r]) rotate([-90,0,0]) color("Red") cylinder(r=kRod_r,h=300);
+	//translate([kSidePulleyCL,15,kBeltCL]) color("Red") Pulley();
 
 	// rod mount
 	difference(){
@@ -211,6 +309,8 @@ module IdlePulleyBracket(){
 	} // diff
 
 } // IdlePulleyBracket
+
+//IdlePulleyBracket();
 
 module MotorBracketS(){
 	kBracket_L=100;
@@ -356,8 +456,7 @@ module Carage(){
 	
 	
 	kXRod_Z=13;
-	kXRod_X=10;
-
+	
 	kMountPlate_h=10;
 
 	// mounting plate
