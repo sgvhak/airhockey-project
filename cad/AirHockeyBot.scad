@@ -30,8 +30,8 @@ kBracket_L=100;
 
 //rotate([0,180,0]) MotorBracketS();  // right motor bracket
 
-rotate([0,90,0]) rotate([0,180,0]) MotorBracket();
-translate([55,135,0]) rotate([0,90,0]) rotate([0,180,0]) mirror([0,1,0]) MotorBracket();
+//translate([0,0,100]) rotate([-90,0,0]) MotorBracket();
+translate([0,0,100]) rotate([90,0,0])  mirror([0,1,0]) MotorBracket();
 
 //rotate([0,180,0]) mirror([1,0,0]) MotorBracketS();  // left motor bracket
 
@@ -40,7 +40,7 @@ translate([55,135,0]) rotate([0,90,0]) rotate([0,180,0]) mirror([0,1,0]) MotorBr
 //XCarrage(); // X carrage print 1
 
 //rotate([0,90,0]) rotate([0,180,0]) IdlePulleyBracket();
-//translate([70,85,0]) rotate([0,90,0]) rotate([0,180,0]) mirror([0,1,0]) IdlePulleyBracket();
+//translate([0,175,0]) rotate([0,90,0]) rotate([0,180,0]) mirror([0,1,0]) IdlePulleyBracket();
 
 // *********************************
 //Carage();
@@ -169,24 +169,26 @@ module MotorBracket(){
 	kMBolt_r=3;
 	kMotorBoss_r=19.1;
 
-	kMountingPlate_L=60;
-	kMountingPlate_H=40;
+	kMountingPlate_L=70;
+	kMountingPlate_H=120;
 
 	// mounting plate
 
-translate([10,70,0])
+translate([10,100,0])
 	difference(){
 		
 		//translate([0,0,-kBracket_H]) cube([10,kMountingPlate_L,kBracket_H]);
 
 		hull(){
-		translate([0,0,-kMountingPlate_H+5]) rotate([0,90,0])
+		translate([-20,0,-kMountingPlate_H+5]) rotate([90,0,0])
 			cylinder(r=5,h=10);
-		translate([0,kMountingPlate_L,-kMountingPlate_H+5]) rotate([0,90,0])
+		translate([-kMountingPlate_L,0,-kMountingPlate_H+5]) rotate([90,0,0])
 			cylinder(r=5,h=10);
-		translate([0,0,-5]) rotate([0,90,0])
+		translate([40,0,-5]) rotate([90,0,0])
 			cylinder(r=5,h=10);
-		translate([0,kMountingPlate_L,-20]) rotate([0,90,0])
+		translate([0,0,-5]) rotate([90,0,0])
+			cylinder(r=5,h=10);
+		translate([-kMountingPlate_L,0,-60]) rotate([90,0,0])
 			cylinder(r=5,h=10);
 		}
 		// mounting holes
@@ -196,20 +198,22 @@ translate([10,70,0])
 		//	cylinder(r=kMBolt_r,h=20);
 
 		// mounting holes
-		translate([-0.05,kMountingPlate_L/2-kMountingPlate_L/3,-5-kMountingPlate_H/3]) rotate([0,90,0])
+		translate([-kMountingPlate_L+5,0.05,-5-kMountingPlate_H/2]) rotate([90,0,0])
 			cylinder(r=kMBolt_r,h=20);
-		translate([-0.05,kMountingPlate_L/2+kMountingPlate_L/3,-5-kMountingPlate_H/3]) rotate([0,90,0])
+		translate([-kMountingPlate_L+35,0.05,-5-kMountingPlate_H/2]) rotate([90,0,0])
 			cylinder(r=kMBolt_r,h=20);
-		translate([-0.05,kMountingPlate_L/2-kMountingPlate_L/3,-5-kMountingPlate_H+kMountingPlate_H/3]) rotate([0,90,0])
+		translate([-kMountingPlate_L+5,0.05,-5-kMountingPlate_H+15])
+			rotate([90,0,0])
 			cylinder(r=kMBolt_r,h=20);
-		translate([-0.05,kMountingPlate_L/2+kMountingPlate_L/3,-5-kMountingPlate_H+kMountingPlate_H/3]) rotate([0,90,0])
+		translate([-kMountingPlate_L+35,0.05,-5-kMountingPlate_H+15])
+			rotate([90,0,0])
 			cylinder(r=kMBolt_r,h=20);
 
 	} // diff
 
 	//Gussets
-	translate([10,73,0])	Gusset();
-	translate([10,100,0])	Gusset();
+	translate([18,95,-5])	rotate([0,0,-90]) Gusset();
+	//translate([10,100,0])	Gusset();
 
 	// motor mount
 	difference(){
@@ -254,7 +258,8 @@ translate([10,70,0])
 
 module IdlePulleyBracket(){
 	kBracket_L=85;
-	kBracket_H=50;
+	kBracket_H=100; //50;
+	kBoltOffset=35;
 	kBracket_w=70;
 	kBracket_r=5;
 	kMBolt_r=3;
@@ -266,13 +271,13 @@ module IdlePulleyBracket(){
 		translate([kXRod_X,0,-kBracket_H]) cube([10,kBracket_L,kBracket_H]);
 
 		// mounting holes
-		translate([kXRod_X-0.05,kBracket_L/2-kBracket_L/4,-5-kBracket_H/3]) rotate([0,90,0])
+		translate([kXRod_X-0.05,kBracket_L/2-kBracket_L/4,-5-(kBracket_H-kBoltOffset)/3-kBoltOffset]) rotate([0,90,0])
 			cylinder(r=kMBolt_r,h=20);
-		translate([kXRod_X-0.05,kBracket_L/2+kBracket_L/4,-5-kBracket_H/3]) rotate([0,90,0])
+		translate([kXRod_X-0.05,kBracket_L/2+kBracket_L/4,-5-(kBracket_H-kBoltOffset)/3-kBoltOffset]) rotate([0,90,0])
 			cylinder(r=kMBolt_r,h=20);
-		translate([kXRod_X-0.05,kBracket_L/2-kBracket_L/4,-5-kBracket_H+kBracket_H/3]) rotate([0,90,0])
+		translate([kXRod_X-0.05,kBracket_L/2-kBracket_L/4,-5-kBracket_H+(kBracket_H-kBoltOffset)/3]) rotate([0,90,0])
 			cylinder(r=kMBolt_r,h=20);
-		translate([kXRod_X-0.05,kBracket_L/2+kBracket_L/4,-5-kBracket_H+kBracket_H/3]) rotate([0,90,0])
+		translate([kXRod_X-0.05,kBracket_L/2+kBracket_L/4,-5-kBracket_H+(kBracket_H-kBoltOffset)/3]) rotate([0,90,0])
 			cylinder(r=kMBolt_r,h=20);
 
 	} // diff
